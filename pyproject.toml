@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "nice-droplets"
+version = "0.1.0"
+description = "A collection of helpful extensions for NiceGUI."
+license = "MIT"
+readme = "README.md"
+authors = ["Michael Ikemann <michael.ikemann@gmail.com>"]
+keywords = ["nicegui", "extensions", "python", "ui", "web"]
+
+homepage = "https://github.com/alyxion/nice-droplets"
+repository = "https://github.com/alyxion/nice-droplets"
+
+[tool.poetry.dependencies]
+python = ">=3.12"
+nicegui = "*"
+
+[build-system]
+requires = ["poetry-core>=1.5.0"]
+build-backend = "poetry.core.masonry.api"
+

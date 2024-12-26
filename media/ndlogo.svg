@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="56 15 100 132" width="90.052px" height="131.25px">
+  <path d="M 140.771 15.258 C 137.543 20.637 131.088 31.395 132.164 37.85 C 133.24 45.381 148.301 45.381 149.377 37.85 C 150.453 31.395 143.998 20.637 140.771 15.258 Z" fill="rgb(6, 76, 137)" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M 125.431 15.258 C 120.292 24.976 110.014 44.412 111.727 56.074 C 113.44 69.68 137.422 69.68 139.135 56.074 C 140.848 44.412 130.57 24.976 125.431 15.258 Z" fill="rgb(23, 102, 171)" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M 100,15 C 85,40 55,90 60,120 C 65,155 135,155 140,120 C 145,90 115,40 100,15 Z" fill="#428BCA" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M 71.93 94.61 C 76.597 89.944 81.264 89.944 85.93 94.61" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M 101.93 94.61 C 106.597 89.944 111.264 89.944 115.93 94.61" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M 68.93 114.61 C 85.597 127.944 102.264 127.944 118.93 114.61" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+</svg>
