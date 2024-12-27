@@ -59,8 +59,7 @@ export default {
                 this.$refs.dockView.style = `position:absolute; top:${top}px; left:${left}px;`;
             });
         },
-
-        attachElement(elementId, attempt = 1) {
+        attachElement(elementId) {
             const element = getHtmlElement(elementId)
             if (!element) {
                 console.warn("Could not attach DockingView to element with id ${elementId}.");
@@ -89,11 +88,14 @@ export default {
                 for (const eventName in handlers) {
                     element.removeEventListener(eventName, handlers[eventName]);
                 }
+                delete this.listeners[elementId];
             }
         },
         show_at(targetElement) {
             this._setVisible()
             this.moveToElement(targetElement);
+            // find element id
+            this.$emit('show')
         },
         hide(element) {
             this._setVisible(false)
@@ -104,5 +106,5 @@ export default {
         _detachAllElements() {
             Object.keys(this.listeners).forEach(key => this.detachElement(key))
         }
-    },
+    }
 };
