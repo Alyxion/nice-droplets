@@ -11,8 +11,8 @@ export default {
     </teleport>`,
     data() {
         return {
-            listeners: {} // to keep track of event listeners per elementId
-        };
+            listeners: {},
+        }
     },
     props: {
         showEvents: Array,
@@ -65,7 +65,7 @@ export default {
                 console.warn("Could not attach DockingView to element with id ${elementId}.");
                 return;
             }
-            const showHandler = () => this.show_at(element);
+            const showHandler = () => this.show_at(elementId);
             const hideHandler = () => this.hide();
             let listenerDict = {};
             for (const eventName of this.showEvents || []) {
@@ -91,14 +91,22 @@ export default {
                 delete this.listeners[elementId];
             }
         },
-        show_at(targetElement) {
+        show_at(elementId) {
+            const targetElement = getHtmlElement(elementId)
+            if (!targetElement) {
+                console.warn("Could not show DockingView at element with id ${elementId}.");
+                return;
+            }
             this._setVisible()
             this.moveToElement(targetElement);
             // find element id
-            this.$emit('show')
+            this.$emit('_show', {
+                target: elementId
+            })
         },
         hide(element) {
             this._setVisible(false)
+            this.$emit('_hide', {})
         },
         _setVisible(visible = true) {
             this.$refs.dockView.style = visible ? "display:flex;" : "display:none;"

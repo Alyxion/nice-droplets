@@ -53,10 +53,15 @@ class Popover(Element, component='popover.js'):
         del self._targets[element.id]
         self.run_method('detachElement', element.id)
 
-    def _handle_show(self, element_id: int) -> None:
-        target = self._targets.get(element_id, None)
+    def _handle_show(self, e: GenericEventArguments) -> None:
+        target = self._targets.get(e.args['target'], None)
         if target is None:
             return
-        arguments = ShowPopoverEventArguments(sender=self)
+        arguments = ShowPopoverEventArguments(sender=self, client=self.client, target=target)
         for handler in self._show_handlers:
+            handle_event(handler, arguments)
+
+    def _handle_hide(self, e: GenericEventArguments) -> None:
+        arguments = HidePopoverEventArguments(sender=self, client=self.client)
+        for handler in self._hide_handlers:
             handle_event(handler, arguments)
