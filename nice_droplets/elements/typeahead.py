@@ -1,0 +1,146 @@
+from typing import Any, Callable, Optional
+from nicegui import ui
+from nicegui.element import Element
+from nicegui.events import (
+    ValueChangeEventArguments, 
+    GenericEventArguments,
+    handle_event,
+    KeyEventArguments,
+    KeyboardAction,
+    KeyboardModifiers,
+    KeyboardKey
+)
+
+from nice_droplets.elements.popover import Popover
+
+
+class Typeahead(Popover):
+    """A typeahead component that shows suggestions as you type.
+    
+    This component extends the Popover component to provide typeahead functionality
+    for any ValueElement (like input, select, etc.).
+    """
+
+    def __init__(self,
+                 *,
+                 on_search: Callable[[str], list[Any]] | None = None,
+                 min_chars: int = 1,
+                 debounce_ms: int = 300,
+                 item_label: Callable[[Any], str] | None = None,
+                 on_select: Callable[[Any], None] | None = None,
+                 observe_parent: bool = True,
+                 ):
+        """Initialize the typeahead component.
+        
+        Args:
+            on_search: Callback function that takes a search string and returns a list of suggestions
+            min_chars: Minimum number of characters before triggering search
+            debounce_ms: Debounce time in milliseconds for search
+            item_label: Function to convert an item to its display string (defaults to str)
+            on_select: Callback function when an item is selected
+            observe_parent: Whether to automatically attach to parent element
+        """
+        super().__init__(
+            show_events=['focus', 'input'],
+            hide_events=['blur'],
+            docking_side='bottom left',
+            observe_parent=observe_parent,
+            default_style=True
+        )
+
+        self._on_search = on_search
+        self._min_chars = min_chars
+        self._debounce_ms = debounce_ms
+        self._item_label = item_label or str
+        self._on_select = on_select
+        self._items: list[Any] = []
+        self._selected_index: int = -1
+        self._suggestion_elements: list[ui.element] = []
+        
+        # Create the suggestion list container
+        with self:
+            self._suggestions_container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
+
+        # Setup event handlers
+        if observe_parent:
+            parent = ui.context.slot.parent
+            parent.on_value_change(self._handle_input_change)
+            parent.on('keydown', self._handle_key)
+
+    def _handle_key(self, e: GenericEventArguments) -> None:
+        """Handle keyboard events."""
+        if not self._items:
+            return
+
+        key = e.args['key']
+        
+        if key == 'Enter':
+            if self._selected_index >= 0 and self._selected_index < len(self._items):
+                self._handle_item_click(self._items[self._selected_index])
+            elif self._items:  # If no item is selected, select the first one
+                self._handle_item_click(self._items[0])
+        elif key == 'ArrowDown':
+            self._selected_index = min(self._selected_index + 1, len(self._items) - 1)
+            self._update_selection()
+        elif key == 'ArrowUp':
+            self._selected_index = max(self._selected_index - 1, -1)
+            self._update_selection()
+
+    def _update_selection(self) -> None:
+        """Update the visual selection of items."""
+        for i, item_element in enumerate(self._suggestion_elements):
+            if i == self._selected_index:
+                item_element.classes('bg-primary text-white', remove='hover:bg-gray-100')
+            else:
+                item_element.classes('hover:bg-gray-100', remove='bg-primary text-white')
+
+    def _handle_input_change(self, e: ValueChangeEventArguments) -> None:
+        """Handle input value changes."""
+        value = str(e.value or '')
+        if len(value) < self._min_chars:
+            self._clear_suggestions()
+            return
+
+        if self._on_search:
+            items = self._on_search(value)
+            self._update_suggestions(items)
+
+    def _clear_suggestions(self) -> None:
+        """Clear all suggestions."""
+        self._suggestions_container.clear()
+        self._items = []
+        self._suggestion_elements = []
+        self._selected_index = -1
+
+    def _update_suggestions(self, items: list[Any]) -> None:
+        """Update the suggestions list."""
+        self._clear_suggestions()
+        self._items = items
+
+        with self._suggestions_container:
+            for item in items:
+                label = self._item_label(item)
+                item_element = ui.element('div').classes(
+                    'w-full px-3 py-2 cursor-pointer hover:bg-gray-100 transition-colors'
+                ).on('click', lambda i=item: self._handle_item_click(i))
+                with item_element:
+                    ui.label(label).classes('w-full text-left')
+                self._suggestion_elements.append(item_element)
+
+    def _handle_item_click(self, item: Any) -> None:
+        """Handle when a suggestion item is clicked."""
+        if self._on_select:
+            self._on_select(item)
+        self.hide()
+
+    def add_target(self, element: Element):
+        """Add a target element to the typeahead."""
+        super().add_target(element)
+        if hasattr(element, 'on_value_change'):
+            element.on_value_change(self._handle_input_change)
+        if hasattr(element, 'on'):
+            element.on('key', self._handle_key)
+
+    def remove_target(self, element: Element):
+        """Remove a target element from the typeahead."""
+        super().remove_target(element)

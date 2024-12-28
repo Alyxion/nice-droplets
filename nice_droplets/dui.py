@@ -1,2 +1,4 @@
 from .elements.popover import Popover as popover
-__all__ = ["popover"]
+from .elements.typeahead import Typeahead as typeahead
+
+__all__ = ["popover", "typeahead"]
