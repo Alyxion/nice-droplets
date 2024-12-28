@@ -11,16 +11,23 @@ class Popover(Element, component='popover.js'):
     VALID_VERTICALS = ['top', 'bottom']
     VALID_HORIZONTALS = ['left', 'right']
 
+    POPOVER_DEFAULT_STYLE = 'padding: 1rem; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'
+
     def __init__(self,
                  *,
                  on_show: Handler[ShowPopoverEventArguments] | None = None,
                  on_hide: Handler[HidePopoverEventArguments] | None = None,
                  observe_parent: bool = True,
+                 default_style: bool = True,
                  show_events: list[str] | None = None,
                  hide_events: list[str] | None = None,
                  docking_side: str = 'bottom left',
                  ):
-        super().__init__()
+        # get current context element
+        with ui.teleport('body'):
+            super().__init__()
+        if default_style:
+            self.classes('bg-white dark:!bg-gray-800').style(self.POPOVER_DEFAULT_STYLE)
         self._props['showEvents'] = show_events or ['focus']
         self._props['hideEvents'] = hide_events or ['blur']
         components = docking_side.split(' ')
@@ -29,15 +36,17 @@ class Popover(Element, component='popover.js'):
         horizontals_found = [c for c in components if c in valid_horizontals]
         verticals_found = [c for c in components if c in valid_verticals]
         if len(verticals_found) == 0 and len(horizontals_found) == 0:
-            raise ValueError(f"You need to specify at least a vertical or a horizontal component in the docking side. Got: {docking_side}")
+            raise ValueError(
+                f"You need to specify at least a vertical or a horizontal component in the docking side. Got: {docking_side}")
         if len(verticals_found) > 1 or len(horizontals_found) > 1:
-            raise ValueError(f"You can only specify one vertical and one horizontal component in the docking side. Got: {docking_side}")
+            raise ValueError(
+                f"You can only specify one vertical and one horizontal component in the docking side. Got: {docking_side}")
         self._props['dockingSide'] = docking_side  # Store the property
         self._show_handlers = [on_show] if on_show else []
         self._hide_handlers = [on_hide] if on_hide else []
         self._targets: dict[int, Element] = {}
-        if observe_parent and self.parent_slot:
-            self.add_target(self.parent_slot.parent)
+        if observe_parent:
+            self.add_target(ui.context.slot.parent)
         self.on('_show', self._handle_show)
         self.on('_hide', self._handle_hide)
 

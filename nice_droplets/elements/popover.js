@@ -1,6 +1,5 @@
 export default {
     template: `
-    <teleport to="body">
         <div
           class="ndPopover"
           :style="style"
@@ -8,7 +7,7 @@ export default {
         >
       <slot />
       </div>
-    </teleport>`,
+    `,
     data() {
         return {
             listeners: {},
@@ -19,6 +18,7 @@ export default {
     props: {
         showEvents: Array,
         hideEvents: Array,
+        offsets: String,
         dockingSide: String,
     },
     mounted() {
@@ -66,6 +66,18 @@ export default {
             let left = targetRect.left + window.scrollX;
 
             const dockingSide = this.dockingSide;
+            // convert offset to string to efficient offsets in pixels, it can be one, two or four values
+            let efficient_offsets = [0, 0, 0, 0];                            
+            if (this.offsets) {
+                const offsets = this.offsets.split(' ');
+                if (offsets.length === 1) {
+                    efficient_offsets = [Number(offsets[0]), Number(offsets[0]), Number(offsets[0]), Number(offsets[0])];
+                } else if (offsets.length === 2) {
+                    efficient_offsets = [Number(offsets[0]), Number(offsets[1]), Number(offsets[0]), Number(offsets[1])];
+                } else {
+                    efficient_offsets = [Number(offsets[0]), Number(offsets[1]), Number(offsets[2]), Number(offsets[3])];
+                }
+            }
 
             requestAnimationFrame(() => {
                 const viewRect = this.$refs.dockView.getBoundingClientRect();

@@ -1,3 +1,2 @@
-from .elements.popover import Popover
-
-__all__ = ["Popover"]
+from .elements.popover import Popover as popover
+__all__ = ["popover"]
