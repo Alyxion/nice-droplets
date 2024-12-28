@@ -45,6 +45,7 @@ class Popover(Element, component='popover.js'):
         self._show_handlers = [on_show] if on_show else []
         self._hide_handlers = [on_hide] if on_hide else []
         self._targets: dict[int, Element] = {}
+        self._disabled = False
         if observe_parent:
             self.add_target(ui.context.slot.parent)
         self.on('_show', self._handle_show)
@@ -60,11 +61,17 @@ class Popover(Element, component='popover.js'):
 
     def show_at(self, target: Element):
         """Show the popover at the given target."""
-        self.run_method('show_at', target.id)
+        self.run_method('showAt', target.id)
 
     def hide(self):
         """Hide the popover."""
         self.run_method('hide')
+
+    def set_disabled(self, disabled: bool):
+        if disabled == self._disabled:
+            return
+        self._disabled = disabled
+        self.run_method('setDisabled', disabled)
 
     def add_target(self, element: Element):
         self.run_method('attachElement', element.id)

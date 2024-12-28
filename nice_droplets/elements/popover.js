@@ -12,7 +12,8 @@ export default {
         return {
             listeners: {},
             observer: null,
-            _currentTarget: null
+            _currentTarget: null,
+            _disabled: False
         }
     },
     props: {
@@ -150,7 +151,7 @@ export default {
                 console.warn("Could not attach DockingView to element with id ${elementId}.");
                 return;
             }
-            const showHandler = () => this.show_at(elementId);
+            const showHandler = () => this.showAt(elementId);
             const hideHandler = () => this.hide();
             let listenerDict = {};
             for (const eventName of this.showEvents || []) {
@@ -176,21 +177,34 @@ export default {
                 delete this.listeners[elementId];
             }
         },
-        show_at(elementId) {
+        showAt(elementId) {
             const targetElement = getHtmlElement(elementId)
             if (!targetElement) {
                 console.warn("Could not show DockingView at element with id ${elementId}.");
                 return;
             }
-            this._setVisible()
+            if (!this._disabled) {
+                this._setVisible()
+            }
+            this._currentTarget = targetElement
             this.moveToElement(targetElement);
             this.$emit('_show', {
                 target: elementId
             })
         },
-        hide(element) {
+        hide() {
             this._setVisible(false)
+            this._currentTarget = null
             this.$emit('_hide', {})
+        },
+        setDisabled(disabled) {
+            this._disabled = disabled
+            if(disabled) {
+                this._setVisible(false)
+            } else if(this._currentTarget) {
+                this._setVisible(true)
+                this.moveToElement(this._currentTarget);
+            }
         },
         _setVisible(visible = true) {
             this.$refs.dockView.style.visibility = visible ? "visible" : "hidden";

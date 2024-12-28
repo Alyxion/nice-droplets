@@ -2,7 +2,7 @@ from typing import Any, Callable, Optional
 from nicegui import ui
 from nicegui.element import Element
 from nicegui.events import (
-    ValueChangeEventArguments, 
+    ValueChangeEventArguments,
     GenericEventArguments,
     handle_event,
     KeyEventArguments,
@@ -56,7 +56,8 @@ class Typeahead(Popover):
         self._items: list[Any] = []
         self._selected_index: int = -1
         self._suggestion_elements: list[ui.element] = []
-        
+        self.set_disabled(True)
+
         # Create the suggestion list container
         with self:
             self._suggestions_container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
@@ -73,7 +74,7 @@ class Typeahead(Popover):
             return
 
         key = e.args['key']
-        
+
         if key == 'Enter':
             if self._selected_index >= 0 and self._selected_index < len(self._items):
                 self._handle_item_click(self._items[self._selected_index])
@@ -99,6 +100,7 @@ class Typeahead(Popover):
         value = str(e.value or '')
         if len(value) < self._min_chars:
             self._clear_suggestions()
+            self.set_disabled(True)
             return
 
         if self._on_search:
@@ -116,6 +118,7 @@ class Typeahead(Popover):
         """Update the suggestions list."""
         self._clear_suggestions()
         self._items = items
+        self.set_disabled(False)
 
         with self._suggestions_container:
             for item in items:
