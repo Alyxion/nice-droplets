@@ -56,7 +56,7 @@ class Typeahead(Popover):
         self._items: list[Any] = []
         self._selected_index: int = -1
         self._suggestion_elements: list[ui.element] = []
-        self.set_disabled(True)
+        self.keep_hidden = True
 
         # Create the suggestion list container
         with self:
@@ -100,7 +100,7 @@ class Typeahead(Popover):
         value = str(e.value or '')
         if len(value) < self._min_chars:
             self._clear_suggestions()
-            self.set_disabled(True)
+            self.keep_hidden = True
             return
 
         if self._on_search:
@@ -118,7 +118,7 @@ class Typeahead(Popover):
         """Update the suggestions list."""
         self._clear_suggestions()
         self._items = items
-        self.set_disabled(False)
+        self.keep_hidden = False
 
         with self._suggestions_container:
             for item in items:

@@ -13,7 +13,7 @@ export default {
             listeners: {},
             observer: null,
             _currentTarget: null,
-            _disabled: False
+            _keepHidden: False
         }
     },
     props: {
@@ -183,7 +183,7 @@ export default {
                 console.warn("Could not show DockingView at element with id ${elementId}.");
                 return;
             }
-            if (!this._disabled) {
+            if (!this._keepHidden) {
                 this._setVisible()
             }
             this._currentTarget = targetElement
@@ -197,9 +197,9 @@ export default {
             this._currentTarget = null
             this.$emit('_hide', {})
         },
-        setDisabled(disabled) {
-            this._disabled = disabled
-            if(disabled) {
+        setKeepHidden(keepHidden) {
+            this._keepHidden = keepHidden
+            if(keepHidden) {
                 this._setVisible(false)
             } else if(this._currentTarget) {
                 this._setVisible(true)

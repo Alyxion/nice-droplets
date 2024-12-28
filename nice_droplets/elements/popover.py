@@ -1,5 +1,6 @@
 import uuid
 
+from docutils.parsers.rst.states import state_classes
 from nicegui import ui
 from nicegui.element import Element
 from nicegui.events import Handler, handle_event, GenericEventArguments
@@ -45,7 +46,7 @@ class Popover(Element, component='popover.js'):
         self._show_handlers = [on_show] if on_show else []
         self._hide_handlers = [on_hide] if on_hide else []
         self._targets: dict[int, Element] = {}
-        self._disabled = False
+        self._keepHidden = False
         if observe_parent:
             self.add_target(ui.context.slot.parent)
         self.on('_show', self._handle_show)
@@ -67,11 +68,16 @@ class Popover(Element, component='popover.js'):
         """Hide the popover."""
         self.run_method('hide')
 
-    def set_disabled(self, disabled: bool):
-        if disabled == self._disabled:
+    @property
+    def keep_hidden(self):
+        return self._keepHidden
+
+    @keep_hidden.setter
+    def keep_hidden(self, state: bool):
+        if state == self._keepHidden:
             return
-        self._disabled = disabled
-        self.run_method('setDisabled', disabled)
+        self._keepHidden = state
+        self.run_method('setKeepHidden', state)
 
     def add_target(self, element: Element):
         self.run_method('attachElement', element.id)
