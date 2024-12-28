@@ -8,6 +8,9 @@ from nice_droplets.events import ShowPopoverEventArguments, HidePopoverEventArgu
 
 
 class Popover(Element, component='popover.js'):
+    VALID_VERTICALS = ['top', 'bottom']
+    VALID_HORIZONTALS = ['left', 'right']
+
     def __init__(self,
                  *,
                  on_show: Handler[ShowPopoverEventArguments] | None = None,
@@ -15,10 +18,21 @@ class Popover(Element, component='popover.js'):
                  observe_parent: bool = True,
                  show_events: list[str] | None = None,
                  hide_events: list[str] | None = None,
+                 docking_side: str = 'left bottom',
                  ):
         super().__init__()
         self._props['showEvents'] = show_events or ['focus']
         self._props['hideEvents'] = hide_events or ['blur']
+        components = docking_side.split(' ')
+        valid_verticals = ['top', 'bottom']
+        valid_horizontals = ['left', 'right']
+        horizontals_found = [c for c in components if c in valid_horizontals]
+        verticals_found = [c for c in components if c in valid_verticals]
+        if len(verticals_found) == 0 and len(horizontals_found) == 0:
+            raise ValueError(f"You need to specify at least a vertical or a horizontal component in the docking side. Got: {docking_side}")
+        if len(verticals_found) > 1 or len(horizontals_found) > 1:
+            raise ValueError(f"You can only specify one vertical and one horizontal component in the docking side. Got: {docking_side}")
+        self._props['dockingSide'] = docking_side  # Store the property
         self._show_handlers = [on_show] if on_show else []
         self._hide_handlers = [on_hide] if on_hide else []
         self._targets: dict[int, Element] = {}

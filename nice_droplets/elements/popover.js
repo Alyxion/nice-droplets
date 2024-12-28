@@ -12,19 +12,21 @@ export default {
     data() {
         return {
             listeners: {},
+            observer: null,
+            _currentTarget: null
         }
     },
     props: {
         showEvents: Array,
         hideEvents: Array,
+        dockingSide: String,
     },
     mounted() {
-        // Start hidden, but ensure pointerEvents & z-index remain on the element
-        this.$refs.dockView.style = "display:none; position:absolute;";
+        this.$refs.dockView.style.visibility = 'hidden';
+        this.$refs.dockView.style.position = 'absolute';
         this.$refs.dockView.style.pointerEvents = "auto";
-        this.$refs.dockView.style.zIndex = 2147483647; // a very large z-index
+        this.$refs.dockView.style.zIndex = 2147483647;
 
-        // Prevent click events from propagating
         this.$refs.dockView.addEventListener('mousedown', event => {
             event.preventDefault();
             event.stopPropagation();
@@ -33,30 +35,102 @@ export default {
             event.preventDefault();
             event.stopPropagation();
         });
+
+        this.observer = new MutationObserver(() => {
+            if (this._currentTarget) {
+                this.moveToElement(this._currentTarget);
+            }
+        });
+
+        this.observer.observe(this.$refs.dockView, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+            attributes: true
+        });
     },
     beforeUnmount() {
+        if (this.observer) {
+            this.observer.disconnect();
+        }
         this._detachAllElements()
     },
     methods: {
         moveToElement(target) {
+            if (this.$refs.dockView.style.visibility === 'hidden') {
+                return;
+            }
+            this._currentTarget = target;
             const targetRect = target.getBoundingClientRect();
             let top = targetRect.bottom + window.scrollY;
             let left = targetRect.left + window.scrollX;
 
+            const dockingSide = this.dockingSide;
+
             requestAnimationFrame(() => {
                 const viewRect = this.$refs.dockView.getBoundingClientRect();
                 const viewHeight = viewRect.height;
-                if ( // if not enough space below, move up
-                    targetRect.bottom + viewHeight > window.innerHeight &&
-                    targetRect.top - viewHeight > 0
-                ) {
-                    this.$refs.dockView.style.transform = "translateY(-100%)";
-                    top = targetRect.top + window.scrollY;
+                const viewWidth = viewRect.width;
+                const targetWidth = targetRect.width;
+                this.$refs.dockView.style.width = `${targetWidth}px`;
+
+                const components = dockingSide.split(' ');
+
+                let vertical = components.find(c => c === 'top' || c === 'bottom');
+                let horizontal = components.find(c => c === 'left' || c === 'right');
+
+                const firstComponent = components[0];
+                const isHorizontalFirst = firstComponent === 'left' || firstComponent === 'right';
+
+                if (isHorizontalFirst) {
+                    if (vertical === 'bottom' && targetRect.bottom - viewHeight < 0) {
+                        vertical = 'top';
+                    }
+                    if (horizontal === 'left') {
+                        left = targetRect.left + window.scrollX - viewWidth;
+                    } else if (horizontal === 'right') {
+                        left = targetRect.right + window.scrollX;
+                    }
+                    if (vertical === 'top') {
+                        top = targetRect.top + window.scrollY;
+                    } else if (vertical === 'bottom') {
+                        top = targetRect.bottom + window.scrollY - viewHeight;
+                    } else {
+                        top = targetRect.top + window.scrollY;
+                        this.$refs.dockView.style.height = `${targetRect.height}px`;
+                    }
                 } else {
-                    this.$refs.dockView.style.transform = "translateY(0)";
+                    if (vertical === 'top' && targetRect.top - viewHeight < 0) {
+                        vertical = 'bottom';
+                    }
+                    if (vertical === 'top') {
+                        top = targetRect.top + window.scrollY - viewHeight;
+                        if (!horizontal) {
+                            this.$refs.dockView.style.width = `${targetRect.width}px`;
+                        }
+                    } else if (vertical === 'bottom') {
+                        top = targetRect.bottom + window.scrollY;
+                        if (!horizontal) {
+                            this.$refs.dockView.style.width = `${targetRect.width}px`;
+                        }
+                    }
+                    if (horizontal === 'left') {
+                        left = targetRect.left + window.scrollX;
+                    } else if (horizontal === 'right') {
+                        left = targetRect.right + window.scrollX - viewWidth;
+                    } else {
+                        left = targetRect.left + window.scrollX;
+                    }
                 }
-                // Update the absolute positioning
-                this.$refs.dockView.style = `position:absolute; top:${top}px; left:${left}px;`;
+                if (left < 0) {
+                    left = 0;
+                }            
+                if (top < 0) {
+                    top = 0;
+                }            
+                this.$refs.dockView.style.top = `${top}px`;
+                this.$refs.dockView.style.left = `${left}px`;
+                this.$refs.dockView.style.position = 'absolute';
             });
         },
         attachElement(elementId) {
@@ -99,7 +173,6 @@ export default {
             }
             this._setVisible()
             this.moveToElement(targetElement);
-            // find element id
             this.$emit('_show', {
                 target: elementId
             })
@@ -109,7 +182,7 @@ export default {
             this.$emit('_hide', {})
         },
         _setVisible(visible = true) {
-            this.$refs.dockView.style = visible ? "display:flex;" : "display:none;"
+            this.$refs.dockView.style.visibility = visible ? "visible" : "hidden";
         },
         _detachAllElements() {
             Object.keys(this.listeners).forEach(key => this.detachElement(key))

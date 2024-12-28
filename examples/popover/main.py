@@ -1,5 +1,3 @@
-from xml.dom.minidom import Element
-
 from nicegui import ui
 from nice_droplets import dui
 
@@ -7,10 +5,8 @@ from nice_droplets import dui
 @ui.page('/')
 async def index():
     def create_field(label):
-        with ui.input(label=label) as input:
-            pass
-
-            with dui.Popover() as tt:
+        with ui.input(label=label):
+            with dui.Popover(docking_side='top') as tt:
                 tt.style('background-color: white;')
                 # tt.observe(input)
                 # a small table with some suggestions
@@ -26,9 +22,15 @@ async def index():
                          columns=[{'name': 'name', 'label': 'Name', 'field': 'name'},
                                   {'name': 'age', 'label': 'Age', 'field': 'age'}])
 
-    create_field("Name")
-    create_field("Email")
-    create_field("Password")
+    # create some space on top
+    ui.space().style('height: 200px;')
+    with ui.row():
+        with ui.element().style('width: 300px;'):
+            pass
+        with ui.element():
+            create_field("Name")
+            create_field("Email")
+            create_field("Password")
 
 
-ui.run(show=False)
+ui.run(show=False, uvicorn_reload_includes='*.py, *.js')
