@@ -2,7 +2,7 @@ export default {
     template: `
     <teleport to="body">
         <div
-          class="suggestionView"
+          class="ndPopover"
           :style="style"
           ref="dockView"
         >
@@ -72,7 +72,6 @@ export default {
                 const viewHeight = viewRect.height;
                 const viewWidth = viewRect.width;
                 const targetWidth = targetRect.width;
-                this.$refs.dockView.style.width = `${targetWidth}px`;
 
                 const components = dockingSide.split(' ');
 

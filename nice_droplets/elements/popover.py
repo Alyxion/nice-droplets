@@ -18,7 +18,7 @@ class Popover(Element, component='popover.js'):
                  observe_parent: bool = True,
                  show_events: list[str] | None = None,
                  hide_events: list[str] | None = None,
-                 docking_side: str = 'left bottom',
+                 docking_side: str = 'bottom left',
                  ):
         super().__init__()
         self._props['showEvents'] = show_events or ['focus']
