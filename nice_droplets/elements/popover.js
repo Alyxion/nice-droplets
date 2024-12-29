@@ -24,7 +24,7 @@ export default {
     },
     mounted() {
         this.$refs.dockView.style.visibility = 'hidden';
-        this.$refs.dockView.style.position = 'absolute';
+        this.$refs.dockView.style.position = 'fixed';
         this.$refs.dockView.style.pointerEvents = "auto";
         this.$refs.dockView.style.zIndex = 2147483647;
 
@@ -63,8 +63,8 @@ export default {
             }
             this._currentTarget = target;
             const targetRect = target.getBoundingClientRect();
-            let top = targetRect.bottom + window.scrollY;
-            let left = targetRect.left + window.scrollX;
+            let top = targetRect.bottom;
+            let left = targetRect.left;
 
             const dockingSide = this.dockingSide;
             // convert offset to string to efficient offsets in pixels, it can be one, two or four values
@@ -99,16 +99,16 @@ export default {
                         vertical = 'top';
                     }
                     if (horizontal === 'left') {
-                        left = targetRect.left + window.scrollX - viewWidth;
+                        left = targetRect.left - viewWidth;
                     } else if (horizontal === 'right') {
-                        left = targetRect.right + window.scrollX;
+                        left = targetRect.right;
                     }
                     if (vertical === 'top') {
-                        top = targetRect.top + window.scrollY;
+                        top = targetRect.top;
                     } else if (vertical === 'bottom') {
-                        top = targetRect.bottom + window.scrollY - viewHeight;
+                        top = targetRect.bottom - viewHeight;
                     } else {
-                        top = targetRect.top + window.scrollY;
+                        top = targetRect.top;
                         this.$refs.dockView.style.height = `${targetRect.height}px`;
                     }
                 } else {
@@ -116,22 +116,22 @@ export default {
                         vertical = 'bottom';
                     }
                     if (vertical === 'top') {
-                        top = targetRect.top + window.scrollY - viewHeight;
+                        top = targetRect.top - viewHeight;
                         if (!horizontal) {
                             this.$refs.dockView.style.width = `${targetRect.width}px`;
                         }
                     } else if (vertical === 'bottom') {
-                        top = targetRect.bottom + window.scrollY;
+                        top = targetRect.bottom;
                         if (!horizontal) {
                             this.$refs.dockView.style.width = `${targetRect.width}px`;
                         }
                     }
                     if (horizontal === 'left') {
-                        left = targetRect.left + window.scrollX;
+                        left = targetRect.left;
                     } else if (horizontal === 'right') {
-                        left = targetRect.right + window.scrollX - viewWidth;
+                        left = targetRect.right - viewWidth;
                     } else {
-                        left = targetRect.left + window.scrollX;
+                        left = targetRect.left;
                     }
                 }
                 if (left < 0) {
@@ -142,7 +142,6 @@ export default {
                 }            
                 this.$refs.dockView.style.top = `${top}px`;
                 this.$refs.dockView.style.left = `${left}px`;
-                this.$refs.dockView.style.position = 'absolute';
             });
         },
         attachElement(elementId) {
