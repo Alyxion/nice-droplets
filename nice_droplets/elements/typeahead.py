@@ -1,17 +1,10 @@
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 from nicegui import ui
 from nicegui.element import Element
-from nicegui.events import (
-    ValueChangeEventArguments,
-    GenericEventArguments,
-    handle_event,
-    KeyEventArguments,
-    KeyboardAction,
-    KeyboardModifiers,
-    KeyboardKey
-)
+from nicegui.events import ValueChangeEventArguments, GenericEventArguments
 
 from nice_droplets.elements.popover import Popover
+from nice_droplets.elements.search_list import SearchList
 
 
 class Typeahead(Popover):
@@ -48,19 +41,17 @@ class Typeahead(Popover):
             default_style=True
         )
 
-        self._on_search = on_search
-        self._min_chars = min_chars
-        self._debounce_ms = debounce_ms
-        self._item_label = item_label or str
-        self._on_select = on_select
-        self._items: list[Any] = []
-        self._selected_index: int = -1
-        self._suggestion_elements: list[ui.element] = []
         self.keep_hidden = True
 
-        # Create the suggestion list container
+        # Create the search list
         with self:
-            self._suggestions_container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
+            self._search_list = SearchList(
+                on_search=on_search,
+                min_chars=min_chars,
+                debounce_ms=debounce_ms,
+                item_label=item_label,
+                on_select=lambda item: self._handle_item_select(item)
+            )
 
         # Setup event handlers
         if observe_parent:
@@ -70,70 +61,18 @@ class Typeahead(Popover):
 
     def _handle_key(self, e: GenericEventArguments) -> None:
         """Handle keyboard events."""
-        if not self._items:
-            return
-
-        key = e.args['key']
-
-        if key == 'Enter':
-            if self._selected_index >= 0 and self._selected_index < len(self._items):
-                self._handle_item_click(self._items[self._selected_index])
-            elif self._items:  # If no item is selected, select the first one
-                self._handle_item_click(self._items[0])
-        elif key == 'ArrowDown':
-            self._selected_index = min(self._selected_index + 1, len(self._items) - 1)
-            self._update_selection()
-        elif key == 'ArrowUp':
-            self._selected_index = max(self._selected_index - 1, -1)
-            self._update_selection()
-
-    def _update_selection(self) -> None:
-        """Update the visual selection of items."""
-        for i, item_element in enumerate(self._suggestion_elements):
-            if i == self._selected_index:
-                item_element.classes('bg-primary text-white', remove='hover:bg-gray-100')
-            else:
-                item_element.classes('hover:bg-gray-100', remove='bg-primary text-white')
+        if self._search_list.handle_key(e):
+            pass  # TODO prevent default argument
 
     def _handle_input_change(self, e: ValueChangeEventArguments) -> None:
         """Handle input value changes."""
-        value = str(e.value or '')
-        if len(value) < self._min_chars:
-            self._clear_suggestions()
-            self.keep_hidden = True
-            return
+        self._search_list.handle_input_change(e)
+        self.keep_hidden = len(str(e.value or '')) < self._search_list._min_chars
 
-        if self._on_search:
-            items = self._on_search(value)
-            self._update_suggestions(items)
-
-    def _clear_suggestions(self) -> None:
-        """Clear all suggestions."""
-        self._suggestions_container.clear()
-        self._items = []
-        self._suggestion_elements = []
-        self._selected_index = -1
-
-    def _update_suggestions(self, items: list[Any]) -> None:
-        """Update the suggestions list."""
-        self._clear_suggestions()
-        self._items = items
-        self.keep_hidden = False
-
-        with self._suggestions_container:
-            for item in items:
-                label = self._item_label(item)
-                item_element = ui.element('div').classes(
-                    'w-full px-3 py-2 cursor-pointer hover:bg-gray-100 transition-colors'
-                ).on('click', lambda i=item: self._handle_item_click(i))
-                with item_element:
-                    ui.label(label).classes('w-full text-left')
-                self._suggestion_elements.append(item_element)
-
-    def _handle_item_click(self, item: Any) -> None:
-        """Handle when a suggestion item is clicked."""
-        if self._on_select:
-            self._on_select(item)
+    def _handle_item_select(self, item: Any) -> None:
+        """Handle when a suggestion item is selected."""
+        if on_select:
+            on_select(item)
         self.hide()
 
     def add_target(self, element: Element):
@@ -141,8 +80,7 @@ class Typeahead(Popover):
         super().add_target(element)
         if hasattr(element, 'on_value_change'):
             element.on_value_change(self._handle_input_change)
-        if hasattr(element, 'on'):
-            element.on('key', self._handle_key)
+        element.on('key', self._handle_key)
 
     def remove_target(self, element: Element):
         """Remove a target element from the typeahead."""
