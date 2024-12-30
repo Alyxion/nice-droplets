@@ -6,8 +6,7 @@ from nicegui.events import ValueChangeEventArguments, GenericEventArguments
 
 from nice_droplets.elements.popover import Popover
 from nice_droplets.elements.search_list import SearchList
-from nice_droplets.helpers.event_handler_tracker import EventHandlerTracker
-
+from nice_droplets.components import EventHandlerTracker
 
 class Typeahead(Popover):
     """A typeahead component that shows suggestions as you type.
