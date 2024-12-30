@@ -1,10 +1,12 @@
 from typing import Any, Callable
 from nicegui import ui
 from nicegui.element import Element
+from nicegui.elements.mixins.value_element import ValueElement
 from nicegui.events import ValueChangeEventArguments, GenericEventArguments
 
 from nice_droplets.elements.popover import Popover
 from nice_droplets.elements.search_list import SearchList
+from nice_droplets.helpers.event_handler_tracker import EventHandlerTracker
 
 
 class Typeahead(Popover):
@@ -25,13 +27,12 @@ class Typeahead(Popover):
                  ):
         """Initialize the typeahead component.
         
-        Args:
-            on_search: Callback function that takes a search string and returns a list of suggestions
-            min_chars: Minimum number of characters before triggering search
-            debounce_ms: Debounce time in milliseconds for search
-            item_label: Function to convert an item to its display string (defaults to str)
-            on_select: Callback function when an item is selected
-            observe_parent: Whether to automatically attach to parent element
+        :param on_search: Callback function that takes a search string and returns a list of suggestions
+        :param min_chars: Minimum number of characters before triggering search
+        :param debounce_ms: Debounce time in milliseconds for search
+        :param item_label: Function to convert an item to its display string (defaults to str)
+        :param on_select: Callback function when an item is selected
+        :param observe_parent: Whether to observe the parent element for changes
         """
         super().__init__(
             show_events=['focus', 'input'],
@@ -42,6 +43,8 @@ class Typeahead(Popover):
         )
 
         self.keep_hidden = True
+        self._current_target: ValueElement | None = None
+        self._event_helper: EventHandlerTracker | None = None
 
         # Create the search list
         with self:
@@ -56,32 +59,57 @@ class Typeahead(Popover):
         # Setup event handlers
         if observe_parent:
             parent = ui.context.slot.parent
+            parent.on("keydown", self._handle_key)
             parent.on_value_change(self._handle_input_change)
-            parent.on('keydown', self._handle_key)
 
     def _handle_key(self, e: GenericEventArguments) -> None:
         """Handle keyboard events."""
         if self._search_list.handle_key(e):
-            pass  # TODO prevent default argument
+            e.prevent_default = True
+
+    def _handle_show(self, e: GenericEventArguments) -> None:
+        super()._handle_show(e)
+        new_target = self._targets.get(e.args['target'], None)
+        if self._current_target == new_target:
+            return
+        self._remove_current_target()
+        self._current_target = self._targets.get(e.args['target'], None)
+        self._event_helper = EventHandlerTracker(self._current_target)
+        # Hide the popover after selection
+        # with self._event_helper:
+        #     self._current_target.on_value_change(self._handle_input_change)
+        self._current_target.on("keydown", self._handle_key)
+        # change style
+        # update
+        # self._current_target.update()
+
+    def _remove_current_target(self) -> None:
+        if self._current_target:
+            self._event_helper.remove()
+            self._event_helper = None
+            self._current_target = None            
+
+    def _handle_hide(self, e: GenericEventArguments) -> None:
+        self._remove_current_target()
+        return super()._handle_hide(e)
 
     def _handle_input_change(self, e: ValueChangeEventArguments) -> None:
         """Handle input value changes."""
+        if e.sender != self._current_target:
+            return
         self._search_list.handle_input_change(e)
         self.keep_hidden = len(str(e.value or '')) < self._search_list._min_chars
 
     def _handle_item_select(self, item: Any) -> None:
         """Handle when a suggestion item is selected."""
-        if on_select:
-            on_select(item)
+        # Update the value of the current target if it has a set_value method
+        if not self._current_target:
+            return
+        self._current_target.set_value(item)
         self.hide()
-
-    def add_target(self, element: Element):
-        """Add a target element to the typeahead."""
-        super().add_target(element)
-        if hasattr(element, 'on_value_change'):
-            element.on_value_change(self._handle_input_change)
-        element.on('key', self._handle_key)
 
     def remove_target(self, element: Element):
         """Remove a target element from the typeahead."""
         super().remove_target(element)
+        if self._current_target and self._current_target.id == element.id:
+            self._current_target = None
