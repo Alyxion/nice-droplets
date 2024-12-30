@@ -52,11 +52,11 @@ class Popover(Element, component='popover.js'):
         self.on('_show', self._handle_show)
         self.on('_hide', self._handle_hide)
 
-    def on_show(self, handler: Handler[ShowPopoverEventArguments]):
+    def on_show(self, handler: Handler[ShowPopoverEventArguments]) -> None:
         """Add a callback to be invoked when the popover is shown."""
         self._show_handlers.append(handler)
 
-    def on_hide(self, handler: Handler[HidePopoverEventArguments]):
+    def on_hide(self, handler: Handler[HidePopoverEventArguments]) -> None:
         """Add a callback to be invoked when the popover is hidden."""
         self._hide_handlers.append(handler)
 

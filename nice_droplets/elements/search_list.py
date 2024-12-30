@@ -1,9 +1,10 @@
 from typing import Any, Callable, TypeVar
 from nicegui import ui
-from nicegui.events import ValueChangeEventArguments, GenericEventArguments
+from nicegui.events import ValueChangeEventArguments, GenericEventArguments, Handler, handle_event
 from threading import Thread
 
 from nice_droplets.components import SearchTask
+from nice_droplets.events import SearchListContentUpdateEventArguments
 
 T = TypeVar('T')
 
@@ -17,6 +18,7 @@ class SearchList(ui.element):
                  debounce_ms: int = 300,
                  item_label: Callable[[Any], str] | None = None,
                  on_select: Callable[[Any], None] | None = None,
+                 on_content_update: Handler[SearchListContentUpdateEventArguments] | None = None,
                  poll_interval_ms: int = 100,
                  ):
         """Initialize the search list component.
@@ -27,6 +29,7 @@ class SearchList(ui.element):
             debounce_ms: Debounce time in milliseconds for search
             item_label: Function to convert an item to its display string (defaults to str)
             on_select: Callback function when an item is selected
+            on_content_update: Callback when the content (items) is updated
             poll_interval_ms: How often to check for search results in milliseconds
         """
         super().__init__()
@@ -35,6 +38,7 @@ class SearchList(ui.element):
         self._debounce_ms = debounce_ms
         self._item_label = item_label or str
         self._on_select = on_select
+        self._content_update_handlers = [on_content_update] if on_content_update else []
         self._poll_interval_ms = poll_interval_ms
         self._items: list[Any] = []
         self._suggestion_elements: list[ui.element] = []
@@ -45,13 +49,21 @@ class SearchList(ui.element):
         with self:
             self._suggestions_container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
 
+    def on_content_update(self, handler: Handler[SearchListContentUpdateEventArguments]) -> None:
+        """Add a callback to be invoked when the content is updated."""
+        self._content_update_handlers.append(handler)
+
+    @property
+    def items(self) -> list[Any]:
+        return self._items
+
     def _update_selection(self) -> None:
         """Update the visual selection of items."""
         for i, item_element in enumerate(self._suggestion_elements):
             if i == self._selected_index:
                 item_element.classes('bg-primary text-white', remove='hover:bg-gray-100')
             else:
-                item_element.classes('hover:bg-gray-100', remove='bg-primary text-white')
+                item_element.classes('hover:bg-gray-100', remove='bg-primary text-white')                
 
     def clear(self) -> None:
         """Clear all suggestions."""
@@ -65,9 +77,9 @@ class SearchList(ui.element):
         if self._poll_timer:
             self._poll_timer.deactivate()
             self._poll_timer = None
+        self._notify_content_update()
 
     def update_items(self, items: list[Any]) -> None:
-        """Update the suggestions list."""
         self.clear()
         self._items = items
         with self._suggestions_container:
@@ -79,13 +91,15 @@ class SearchList(ui.element):
                 with item_element:
                     ui.label(label).classes('w-full text-left')
                 self._suggestion_elements.append(item_element)
+        self._notify_content_update()
+
+    def _notify_content_update(self) -> None:
+        """Notify all content update handlers."""
+        args = SearchListContentUpdateEventArguments(sender=self, client=self.client)
+        for handler in self._content_update_handlers:
+            handle_event(handler, args)
 
     def handle_key(self, e: GenericEventArguments) -> bool:
-        """Handle keyboard events.
-        
-        Returns:
-            True if the event was handled, False otherwise
-        """
         key = e.args.get('key', '')
         handled = True
 

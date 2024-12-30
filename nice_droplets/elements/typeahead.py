@@ -7,6 +7,7 @@ from nicegui.events import ValueChangeEventArguments, GenericEventArguments
 from nice_droplets.elements.popover import Popover
 from nice_droplets.elements.search_list import SearchList
 from nice_droplets.components import EventHandlerTracker, SearchTask
+from nice_droplets.events import SearchListContentUpdateEventArguments
 
 T = TypeVar('T')
 
@@ -46,6 +47,7 @@ class Typeahead(Popover):
         self.keep_hidden = True
         self._current_target: ValueElement | None = None
         self._event_helper: EventHandlerTracker | None = None
+        self._min_chars = min_chars
         
         # Convert simple search function to task-based function if needed
         if on_search and not any(str(t) == 'SearchTask' for t in getattr(on_search, '__annotations__', {}).values()):
@@ -59,14 +61,15 @@ class Typeahead(Popover):
                 min_chars=min_chars,
                 debounce_ms=debounce_ms,
                 item_label=item_label,
-                on_select=lambda item: self._handle_item_select(item)
+                on_select=lambda item: self._handle_item_select(item),
+                on_content_update=self._handle_content_update
             )
         
         if observe_parent:
             parent = ui.context.slot.parent
             self.observe(parent)
 
-    def _handle_key(self, e: GenericEventArguments) -> None:
+    async def _handle_key(self, e: GenericEventArguments) -> None:
         """Handle keyboard events."""
         if e.sender != self._current_target:
             return
@@ -98,7 +101,6 @@ class Typeahead(Popover):
         if e.sender != self._current_target:
             return
         self._search_list.handle_input_change(e)
-        self.keep_hidden = len(str(e.value or '')) < self._search_list._min_chars
 
     def _handle_item_select(self, item: Any) -> None:
         """Handle when a suggestion item is selected."""
@@ -106,6 +108,10 @@ class Typeahead(Popover):
             return
         self._current_target.set_value(item)
         self.hide()
+
+    def _handle_content_update(self, e: SearchListContentUpdateEventArguments) -> None:
+        """Handle when the search list content is updated."""
+        self.keep_hidden = len(self._search_list.items) == 0
 
     def observe(self, element: Element):
         """Observe an element for focus events to show typeahead suggestions."""

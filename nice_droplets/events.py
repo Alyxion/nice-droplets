@@ -13,3 +13,9 @@ class ShowPopoverEventArguments(UiEventArguments):
 @dataclass(**KWONLY_SLOTS)
 class HidePopoverEventArguments(UiEventArguments):
     pass
+
+
+@dataclass(**KWONLY_SLOTS)
+class SearchListContentUpdateEventArguments(UiEventArguments):
+    """Event arguments for when a search list's content is updated."""
+    pass
