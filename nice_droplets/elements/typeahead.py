@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar
 from nicegui import ui
 from nicegui.element import Element
 from nicegui.elements.mixins.value_element import ValueElement
@@ -6,7 +6,9 @@ from nicegui.events import ValueChangeEventArguments, GenericEventArguments
 
 from nice_droplets.elements.popover import Popover
 from nice_droplets.elements.search_list import SearchList
-from nice_droplets.components import EventHandlerTracker
+from nice_droplets.components import EventHandlerTracker, SearchTask
+
+T = TypeVar('T')
 
 class Typeahead(Popover):
     """A typeahead component that shows suggestions as you type.
@@ -17,7 +19,7 @@ class Typeahead(Popover):
 
     def __init__(self,
                  *,
-                 on_search: Callable[[str], list[Any]] | None = None,
+                 on_search: Callable[[str], SearchTask[Any]] | Callable[[str], list[Any]] | None = None,
                  min_chars: int = 1,
                  debounce_ms: int = 300,
                  item_label: Callable[[Any], str] | None = None,
@@ -26,12 +28,13 @@ class Typeahead(Popover):
                  ):
         """Initialize the typeahead component.
         
-        :param on_search: Callback function that takes a search string and returns a list of suggestions
-        :param min_chars: Minimum number of characters before triggering search
-        :param debounce_ms: Debounce time in milliseconds for search
-        :param item_label: Function to convert an item to its display string (defaults to str)
-        :param on_select: Callback function when an item is selected
-        :param observe_parent: Whether to observe the parent element for changes
+        Args:
+            on_search: Function that either returns a SearchTask or directly returns search results
+            min_chars: Minimum number of characters before triggering search
+            debounce_ms: Debounce time in milliseconds for search
+            item_label: Function to convert an item to its display string (defaults to str)
+            on_select: Callback function when an item is selected
+            observe_parent: Whether to observe the parent element for changes
         """
         super().__init__(
             show_events=['focus', 'input'],
@@ -43,17 +46,22 @@ class Typeahead(Popover):
         self.keep_hidden = True
         self._current_target: ValueElement | None = None
         self._event_helper: EventHandlerTracker | None = None
-        # TODO: Actually the keydown event should be attached upon show and detached upon hide
-        # Due to a potential bug in Vue or NiceGUI this is not possible at the moment, see
-        # https://github.com/zauberzeug/nicegui/issues/4154
+        
+        # Convert simple search function to task-based function if needed
+        if on_search and not any(str(t) == 'SearchTask' for t in getattr(on_search, '__annotations__', {}).values()):
+            self._on_search = lambda query: SearchTask(on_search, query)
+        else:
+            self._on_search = on_search
+        
         with self:
             self._search_list = SearchList(
-                on_search=on_search,
+                on_search=self._on_search,
                 min_chars=min_chars,
                 debounce_ms=debounce_ms,
                 item_label=item_label,
                 on_select=lambda item: self._handle_item_select(item)
             )
+        
         if observe_parent:
             parent = ui.context.slot.parent
             self.observe(parent)
@@ -94,7 +102,6 @@ class Typeahead(Popover):
 
     def _handle_item_select(self, item: Any) -> None:
         """Handle when a suggestion item is selected."""
-        # Update the value of the current target if it has a set_value method
         if not self._current_target:
             return
         self._current_target.set_value(item)
