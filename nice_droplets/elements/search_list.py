@@ -40,6 +40,35 @@ class SearchList(Element):
         with self:
             self._suggestions_container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
 
+    def _update_selection(self) -> None:
+        """Update the visual selection of items."""
+        for i, item_element in enumerate(self._suggestion_elements):
+            if i == self._selected_index:
+                item_element.classes('bg-primary text-white', remove='hover:bg-gray-100')
+            else:
+                item_element.classes('hover:bg-gray-100', remove='bg-primary text-white')
+
+    def clear(self) -> None:
+        """Clear all suggestions."""
+        self._suggestions_container.clear()
+        self._items = []
+        self._suggestion_elements = []
+        self._selected_index = -1
+
+    def update_items(self, items: list[Any]) -> None:
+        """Update the suggestions list."""
+        self.clear()
+        self._items = items
+        with self._suggestions_container:
+            for item in items:
+                label = self._item_label(item)
+                item_element = ui.element('div').classes(
+                    'w-full px-3 py-2 cursor-pointer hover:bg-gray-100 transition-colors'
+                ).on('click', lambda i=item: self._handle_item_click(i))
+                with item_element:
+                    ui.label(label).classes('w-full text-left')
+                self._suggestion_elements.append(item_element)
+
     def handle_key(self, e: GenericEventArguments) -> bool:
         """Handle keyboard events.
         
@@ -68,14 +97,6 @@ class SearchList(Element):
 
         return handled
 
-    def _update_selection(self) -> None:
-        """Update the visual selection of items."""
-        for i, item_element in enumerate(self._suggestion_elements):
-            if i == self._selected_index:
-                item_element.classes('bg-primary text-white', remove='hover:bg-gray-100')
-            else:
-                item_element.classes('hover:bg-gray-100', remove='bg-primary text-white')
-
     def handle_input_change(self, e: ValueChangeEventArguments) -> None:
         """Handle input value changes."""
         value = str(e.value or '')
@@ -86,28 +107,6 @@ class SearchList(Element):
         if self._on_search:
             items = self._on_search(value)
             self.update_items(items)
-
-    def clear(self) -> None:
-        """Clear all suggestions."""
-        self._suggestions_container.clear()
-        self._items = []
-        self._suggestion_elements = []
-        self._selected_index = -1
-
-    def update_items(self, items: list[Any]) -> None:
-        """Update the suggestions list."""
-        self.clear()
-        self._items = items
-
-        with self._suggestions_container:
-            for item in items:
-                label = self._item_label(item)
-                item_element = ui.element('div').classes(
-                    'w-full px-3 py-2 cursor-pointer hover:bg-gray-100 transition-colors'
-                ).on('click', lambda i=item: self._handle_item_click(i))
-                with item_element:
-                    ui.label(label).classes('w-full text-left')
-                self._suggestion_elements.append(item_element)
 
     def _handle_item_click(self, item: Any) -> None:
         """Handle when a suggestion item is clicked."""

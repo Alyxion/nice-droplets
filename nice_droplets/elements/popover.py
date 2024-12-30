@@ -48,7 +48,7 @@ class Popover(Element, component='popover.js'):
         self._targets: dict[int, Element] = {}
         self._keepHidden = False
         if observe_parent:
-            self.add_target(ui.context.slot.parent)
+            self.observe(ui.context.slot.parent)
         self.on('_show', self._handle_show)
         self.on('_hide', self._handle_hide)
 
@@ -79,11 +79,13 @@ class Popover(Element, component='popover.js'):
         self._keepHidden = state
         self.run_method('setKeepHidden', state)
 
-    def add_target(self, element: Element):
+    def observe(self, element: Element):
+        """Observe an element for popover events."""
         self.run_method('attachElement', element.id)
         self._targets[element.id] = element
 
-    def remove_target(self, element: Element):
+    def unobserve(self, element: Element):
+        """Stop observing an element for popover events."""
         if element.id not in self._targets:
             return
         del self._targets[element.id]

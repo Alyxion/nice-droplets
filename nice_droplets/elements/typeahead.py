@@ -38,15 +38,15 @@ class Typeahead(Popover):
             show_events=['focus', 'input'],
             hide_events=['blur'],
             docking_side='bottom left',
-            observe_parent=observe_parent,
+            observe_parent=False,
             default_style=True
         )
-
         self.keep_hidden = True
         self._current_target: ValueElement | None = None
         self._event_helper: EventHandlerTracker | None = None
-
-        # Create the search list
+        # TODO: Actually the keydown event should be attached upon show and detached upon hide
+        # Due to a potential bug in Vue or NiceGUI this is not possible at the moment, see
+        # https://github.com/zauberzeug/nicegui/issues/4154
         with self:
             self._search_list = SearchList(
                 on_search=on_search,
@@ -55,17 +55,17 @@ class Typeahead(Popover):
                 item_label=item_label,
                 on_select=lambda item: self._handle_item_select(item)
             )
-
-        # Setup event handlers
         if observe_parent:
             parent = ui.context.slot.parent
-            parent.on("keydown", self._handle_key)
-            parent.on_value_change(self._handle_input_change)
+            self.observe(parent)
 
     def _handle_key(self, e: GenericEventArguments) -> None:
         """Handle keyboard events."""
+        if e.sender != self._current_target:
+            return
         if self._search_list.handle_key(e):
-            e.prevent_default = True
+            pass
+            # e.prevent_default = True
 
     def _handle_show(self, e: GenericEventArguments) -> None:
         super()._handle_show(e)
@@ -75,19 +75,12 @@ class Typeahead(Popover):
         self._remove_current_target()
         self._current_target = self._targets.get(e.args['target'], None)
         self._event_helper = EventHandlerTracker(self._current_target)
-        # Hide the popover after selection
-        # with self._event_helper:
-        #     self._current_target.on_value_change(self._handle_input_change)
-        self._current_target.on("keydown", self._handle_key)
-        # change style
-        # update
-        # self._current_target.update()
 
     def _remove_current_target(self) -> None:
         if self._current_target:
+            self._current_target = None
             self._event_helper.remove()
             self._event_helper = None
-            self._current_target = None            
 
     def _handle_hide(self, e: GenericEventArguments) -> None:
         self._remove_current_target()
@@ -108,8 +101,15 @@ class Typeahead(Popover):
         self._current_target.set_value(item)
         self.hide()
 
-    def remove_target(self, element: Element):
-        """Remove a target element from the typeahead."""
-        super().remove_target(element)
+    def observe(self, element: Element):
+        """Observe an element for focus events to show typeahead suggestions."""
+        super().observe(element)
+        if isinstance(element, ValueElement):
+            element.on('keydown', self._handle_key)
+            element.on_value_change(self._handle_input_change)
+
+    def unobserve(self, element: Element):
+        """Stop observing an element for focus events."""
+        super().unobserve(element)
         if self._current_target and self._current_target.id == element.id:
-            self._current_target = None
+            self._remove_current_target()
