@@ -9,8 +9,6 @@ from nice_droplets.elements.search_list import SearchList
 from nice_droplets.components import EventHandlerTracker, SearchTask
 from nice_droplets.events import SearchListContentUpdateEventArguments
 
-T = TypeVar('T')
-
 class Typeahead(Popover):
     """A typeahead component that shows suggestions as you type.
     
@@ -20,9 +18,9 @@ class Typeahead(Popover):
 
     def __init__(self,
                  *,
-                 on_search: Callable[[str], SearchTask[Any]] | Callable[[str], list[Any]] | None = None,
+                 on_search: Callable[[str], SearchTask] | Callable[[str], list[Any]] | None = None,
                  min_chars: int = 1,
-                 debounce_ms: int = 300,
+                 debounce: int = 0.1,
                  item_label: Callable[[Any], str] | None = None,
                  on_select: Callable[[Any], None] | None = None,
                  observe_parent: bool = True,
@@ -48,26 +46,35 @@ class Typeahead(Popover):
         self._current_target: ValueElement | None = None
         self._event_helper: EventHandlerTracker | None = None
         self._min_chars = min_chars
-        
-        # Convert simple search function to task-based function if needed
         if on_search and not any(str(t) == 'SearchTask' for t in getattr(on_search, '__annotations__', {}).values()):
             self._on_search = lambda query: SearchTask(on_search, query)
         else:
             self._on_search = on_search
-        
         with self:
             self._search_list = SearchList(
                 on_search=self._on_search,
                 min_chars=min_chars,
-                debounce_ms=debounce_ms,
+                debounce=debounce,
                 item_label=item_label,
                 on_select=lambda item: self._handle_item_select(item),
                 on_content_update=self._handle_content_update
             )
-        
         if observe_parent:
             parent = ui.context.slot.parent
             self.observe(parent)
+
+    def observe(self, element: Element):
+        """Observe an element for focus events to show typeahead suggestions."""
+        super().observe(element)
+        if isinstance(element, ValueElement):
+            element.on('keydown', self._handle_key)
+            element.on_value_change(self._handle_input_change)
+
+    def unobserve(self, element: Element):
+        """Stop observing an element for focus events."""
+        super().unobserve(element)
+        if self._current_target and self._current_target.id == element.id:
+            self._remove_current_target()
 
     async def _handle_key(self, e: GenericEventArguments) -> None:
         """Handle keyboard events."""
@@ -112,16 +119,3 @@ class Typeahead(Popover):
     def _handle_content_update(self, e: SearchListContentUpdateEventArguments) -> None:
         """Handle when the search list content is updated."""
         self.keep_hidden = len(self._search_list.items) == 0
-
-    def observe(self, element: Element):
-        """Observe an element for focus events to show typeahead suggestions."""
-        super().observe(element)
-        if isinstance(element, ValueElement):
-            element.on('keydown', self._handle_key)
-            element.on_value_change(self._handle_input_change)
-
-    def unobserve(self, element: Element):
-        """Stop observing an element for focus events."""
-        super().unobserve(element)
-        if self._current_target and self._current_target.id == element.id:
-            self._remove_current_target()

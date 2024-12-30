@@ -1,10 +1,9 @@
-from typing import Any, Callable, TypeVar
+import time
+from typing import Any, Callable
 
 from .task import Task
 
-T = TypeVar('T')
-
-class SearchTask(Task[list[T]]):
+class SearchTask(Task):
     """A task for performing searches.
     
     This task executes a search function with a query string and returns a list of results.
@@ -15,19 +14,17 @@ class SearchTask(Task[list[T]]):
                  query: str):
         """Initialize the search task.
         
-        Args:
-            search_fn: Function that performs the search, taking a query string and returning results
-            query: The search query string
+        :param search_fn: The search function to execute.
+        :param query: The query string to pass to the search function.
         """
         super().__init__()
         self._search_fn = search_fn
         self._query = query
 
-    def execute(self) -> list[T]:
+    def execute(self) -> list:
         """Execute the search if not cancelled.
         
-        Returns:
-            List of search results, or empty list if cancelled
+        :return: A list of search results.
         """
         if self.is_cancelled:
             return []
