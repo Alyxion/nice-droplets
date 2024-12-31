@@ -3,12 +3,12 @@ from nicegui import ui
 from nicegui.events import ValueChangeEventArguments, GenericEventArguments, Handler, handle_event
 
 from nice_droplets.components import SearchTask
-from nice_droplets.components.task_executor import TaskExecutor
+from nice_droplets.components.search_manager import SearchManager, SearchResultHandler
 from nice_droplets.events import SearchListContentUpdateEventArguments
 
 T = TypeVar('T')
 
-class SearchList(ui.element):
+class SearchList(ui.element, SearchResultHandler):
     """List component showing search results with keyboard navigation"""
 
     def __init__(self,
@@ -34,8 +34,15 @@ class SearchList(ui.element):
         self._items: list[Any] = []
         self._suggestion_elements: list[ui.element] = []
         self._selected_index = -1
-        self._task_executor = TaskExecutor(debounce)
-        self._poll_timer: ui.timer | None = None
+        
+        self._search_manager = SearchManager(
+            on_search=self._on_search,
+            result_handler=self,
+            min_chars=min_chars,
+            debounce=debounce,
+            poll_interval=poll_interval
+        )
+        
         with self:
             self._suggestions_container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
 
@@ -61,10 +68,6 @@ class SearchList(ui.element):
         self._items = []
         self._suggestion_elements = []
         self._selected_index = -1
-        self._task_executor.cancel()
-        if self._poll_timer:
-            self._poll_timer.cancel()
-            self._poll_timer = None
         self._notify_content_update()
 
     def update_items(self, items: list[Any]) -> None:
@@ -110,39 +113,32 @@ class SearchList(ui.element):
     def handle_input_change(self, e: ValueChangeEventArguments) -> None:
         """Handle input changes"""
         value = str(e.value or '')
-        if len(value) < self._min_chars:
-            self.clear()
-            return
-        if not self._on_search:
-            return
-        task = self._on_search(value)
-        self._task_executor.schedule(task)
-        if self._poll_timer:
-            self._poll_timer.cancel()
-        self._poll_timer = ui.timer(
-            self._poll_interval,
-            self._check_search_results,
-            active=True
-        )
-
-    def _check_search_results(self) -> None:
-        """Check if search results are ready"""
-        task = self._task_executor.current_task
-        if task is None:
-            return
-        if not task.is_done:
-            return            
-        if self._poll_timer:
-            self._poll_timer.cancel()
-            self._poll_timer = None            
-        if task.has_error:
-            print(f"Search error: {task.error}")
-            self.clear()
-            return
-        results = task.elements
-        self.update_items(results)
+        self._search_manager.handle_search(value)
 
     def _handle_item_click(self, item: Any) -> None:
         """Handle item selection"""
         if self._on_select:
             self._on_select(item)
+        self.clear()
+
+    def on_search_started(self) -> None:
+        """Called when a search is started."""
+        pass
+
+    def on_search_error(self, error: Exception) -> None:
+        """Called when a search fails."""
+        print(f"Search error: {error}")
+        self.clear()
+
+    def on_search_results(self, results: list[Any]) -> None:
+        """Called when search results are available."""
+        self.update_items(results)
+
+    def on_search_completed(self) -> None:
+        """Called when a search is completed."""
+        pass
+
+    def cleanup(self) -> None:
+        """Clean up resources."""
+        super().cleanup()
+        self._search_manager.cleanup()
