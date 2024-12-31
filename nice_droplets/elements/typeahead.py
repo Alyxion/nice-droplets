@@ -21,7 +21,6 @@ class Typeahead(Popover):
                  on_search: Callable[[str], SearchTask] | None = None,
                  min_chars: int = 1,
                  debounce: int = 0.1,
-                 item_label: Callable[[Any], str] | None = None,
                  on_select: Callable[[Any], None] | None = None,
                  observe_parent: bool = True,
                  ):
@@ -31,7 +30,6 @@ class Typeahead(Popover):
             on_search: Function that either returns a SearchTask or directly returns search results
             min_chars: Minimum number of characters before triggering search
             debounce_ms: Debounce time in milliseconds for search
-            item_label: Function to convert an item to its display string (defaults to str)
             on_select: Callback function when an item is selected
             observe_parent: Whether to observe the parent element for changes
         """
@@ -52,7 +50,6 @@ class Typeahead(Popover):
                 on_search=on_search,
                 min_chars=min_chars,
                 debounce=debounce,
-                item_label=item_label,
                 on_select=lambda item: self._handle_item_select(item),
                 on_content_update=self._handle_content_update
             )
