@@ -1,5 +1,6 @@
 from nicegui import ui
 from nice_droplets import dui
+from nice_droplets.elements.fullscreen import Fullscreen
 
 FRUITS = [
     'Apple', 'Apricot', 'Avocado',
@@ -27,6 +28,13 @@ async def search_fruits_filter(query: str) -> list[str]:
 
 @ui.page('/')
 def index():
+    fullscreen_handler = Fullscreen()
+    fullscreen_button = ui.button(
+        icon='fullscreen',
+        on_click=lambda: fullscreen_handler.toggle(block_escape_key=True),
+    )
+    fullscreen_button.props('flat')
+
     # Dark mode toggle
     ui.markdown('## Fruit Search Example').classes('text-h5 mt-4 mb-2')
     

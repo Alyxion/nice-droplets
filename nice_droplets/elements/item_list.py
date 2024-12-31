@@ -24,7 +24,7 @@ class ItemList(ui.element):
         self._hot_key_handler = HotKeyHandler({
             'up': 'ArrowUp',
             'down': 'ArrowDown',
-            'select': 'Enter'
+            'select': ['Enter', 'go']  # Add 'go' for Android keyboard's "open" action
         })
         
         with self:
@@ -90,6 +90,9 @@ class ItemList(ui.element):
         elif self._hot_key_handler.verify('select', e):
             if 0 <= self._selected_index < len(self._items):
                 self._handle_item_click(self._items[self._selected_index])
+            else:
+                if len(self._items) > 0:
+                    self._handle_item_click(self._items[0])
         else:
             handled = False
             
