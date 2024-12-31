@@ -2,6 +2,7 @@ from typing import Any, Callable
 from nicegui import ui
 from nicegui.events import GenericEventArguments, Handler, handle_event
 
+from nice_droplets.components.hot_key_handler import HotKeyHandler
 from nice_droplets.events import SearchListContentUpdateEventArguments
 
 
@@ -17,11 +18,17 @@ class ItemList(ui.element):
         self._on_select = on_select
         self._content_update_handlers = [on_content_update] if on_content_update else []
         self._items: list[Any] = []
-        self._item_elements: list[ui.element] = []
+        self._suggestion_elements: list[ui.element] = []
         self._selected_index = -1
         
+        self._hot_key_handler = HotKeyHandler({
+            'up': 'ArrowUp',
+            'down': 'ArrowDown',
+            'select': 'Enter'
+        })
+        
         with self:
-            self._item_container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
+            self._suggestions_container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
 
     def on_content_update(self, handler: Handler[SearchListContentUpdateEventArguments]) -> None:
         """Add content update handler"""
@@ -33,7 +40,7 @@ class ItemList(ui.element):
 
     def _update_selection(self) -> None:
         """Update visual selection"""
-        for i, item_element in enumerate(self._item_elements):
+        for i, item_element in enumerate(self._suggestion_elements):
             if i == self._selected_index:
                 item_element.classes('bg-primary text-white', remove='hover:bg-gray-100')
             else:
@@ -41,9 +48,9 @@ class ItemList(ui.element):
 
     def clear(self) -> None:
         """Clear suggestions"""
-        self._item_container.clear()
+        self._suggestions_container.clear()
         self._items = []
-        self._item_elements = []
+        self._suggestion_elements = []
         self._selected_index = -1
         self._notify_content_update()
 
@@ -51,14 +58,15 @@ class ItemList(ui.element):
         """Update displayed items"""
         self.clear()
         self._items = items
-        with self._item_container:
+        with self._suggestions_container:
             for item in items:
+                label = str(item)
                 item_element = ui.element('div').classes(
                     'w-full px-3 py-2 cursor-pointer hover:bg-gray-100 transition-colors'
                 ).on('click', lambda i=item: self._handle_item_click(i))
                 with item_element:
-                    ui.label(item).classes('w-full text-left')
-                self._item_elements.append(item_element)
+                    ui.label(label).classes('w-full text-left')
+                self._suggestion_elements.append(item_element)
         self._notify_content_update()
 
     def _notify_content_update(self) -> None:
@@ -69,21 +77,22 @@ class ItemList(ui.element):
 
     def handle_key(self, e: GenericEventArguments) -> bool:
         """Handle keyboard navigation"""
-        key = e.args.get('key', '')
         handled = True
-        if key == 'ArrowDown':
+        
+        if self._hot_key_handler.verify('down', e):
             if self._selected_index < len(self._items) - 1:
                 self._selected_index += 1
                 self._update_selection()
-        elif key == 'ArrowUp':
+        elif self._hot_key_handler.verify('up', e):
             if self._selected_index > 0:
                 self._selected_index -= 1
                 self._update_selection()
-        elif key == 'Enter':
+        elif self._hot_key_handler.verify('select', e):
             if 0 <= self._selected_index < len(self._items):
                 self._handle_item_click(self._items[self._selected_index])
         else:
             handled = False
+            
         return handled
 
     def _handle_item_click(self, item: Any) -> None:
