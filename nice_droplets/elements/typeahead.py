@@ -18,7 +18,7 @@ class Typeahead(Popover):
 
     def __init__(self,
                  *,
-                 on_search: Callable[[str], SearchTask] | Callable[[str], list[Any]] | None = None,
+                 on_search: Callable[[str], SearchTask] | None = None,
                  min_chars: int = 1,
                  debounce: int = 0.1,
                  item_label: Callable[[Any], str] | None = None,
@@ -46,13 +46,10 @@ class Typeahead(Popover):
         self._current_target: ValueElement | None = None
         self._event_helper: EventHandlerTracker | None = None
         self._min_chars = min_chars
-        if on_search and not any(str(t) == 'SearchTask' for t in getattr(on_search, '__annotations__', {}).values()):
-            self._on_search = lambda query: SearchTask(on_search, query)
-        else:
-            self._on_search = on_search
+
         with self:
             self._search_list = SearchList(
-                on_search=self._on_search,
+                on_search=on_search,
                 min_chars=min_chars,
                 debounce=debounce,
                 item_label=item_label,

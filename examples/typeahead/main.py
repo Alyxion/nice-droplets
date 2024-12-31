@@ -20,7 +20,7 @@ FRUITS = [
     'Watermelon'
 ]
 
-def search_fruits(query: str) -> list[str]:
+async def search_fruits_filter(query: str) -> list[str]:
     """Search fruits that match the query."""
     query = query.lower()
     return [fruit for fruit in FRUITS if query in fruit.lower()]
@@ -33,7 +33,7 @@ def index():
     # Simple fruit search
     with ui.input(label='Search fruits', placeholder='Type to search...') as fruit_input:
         with dui.typeahead(
-            on_search=search_fruits,
+            on_search=search_fruits_filter,
             min_chars=1,
             on_select=lambda fruit: fruit_input.set_value(fruit)
         ):

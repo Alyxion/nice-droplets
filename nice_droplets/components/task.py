@@ -5,12 +5,13 @@ from typing import Any, Generic, TypeVar
 class Task:
     """Base class for asynchronous tasks.
     
-    This class provides the foundation for executing tasks that may take time
-    and need to be cancellable. It is thread-safe and can be polled for results.
+    This class provides the foundation for executing tasks that may take time and need to be cancellable on a finer level. 
+    It is thread-safe and can be polled for results.
+
+    You need to implement either execute or execute_async, depending on your needs.
     """
     def __init__(self):
         self._cancel_event = Event()
-        self._result: Any | None = None
         self._is_done = Event()
         self._error: Exception | None = None
 
@@ -35,8 +36,8 @@ class Task:
     
     @property
     def is_done(self) -> bool:
-        """Check if the task has completed (successfully or with error)."""
-        return self._is_done.is_set()
+        """Check if the task has completed (successfully or with error). Is also set if a cancellation was requested and the task finished executing."""
+        return self._is_done.is_set()      
     
     @property
     def has_error(self) -> bool:
@@ -48,20 +49,21 @@ class Task:
         """Get the error if the task failed, None otherwise."""
         return self._error
     
-    @property
-    def result(self):
-        """Get the result of the task if available, None otherwise."""
-        return self._result
-    
     def cancel(self) -> None:
         """Request cancellation of the task."""
         self._cancel_event.set()
+
+    @property
+    def is_async(self) -> bool:
+        """Check if the task is executed asynchronously."""
+        # Override this for custom implementations of other tasks supporting both synchronous and asynchronous execution.
+        return self.run_async != Task.run_async
     
     def run(self) -> None:
         """Run the task and store its result or error."""
         try:
             if not self.is_cancelled:
-                self._result = self.execute()
+                self.execute()
         except Exception as e:
             self._error = e
         finally:
@@ -71,7 +73,7 @@ class Task:
         """Run the task asynchronously and store its result or error."""
         try:
             if not self.is_cancelled:
-                self._result = await self.execute_async()
+                await self.execute_async()
         except Exception as e:
             self._error = e
         finally:

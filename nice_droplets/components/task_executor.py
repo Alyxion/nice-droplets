@@ -51,7 +51,7 @@ class TaskExecutor:
         if self._current_task:
             self._current_task_started = True
             # Check if execute_async is overridden
-            if self._current_task.execute_async.__func__ is not Task.execute_async:
+            if self._current_task.is_async:
                 background_tasks.create(self._current_task.run_async())
             else:
                 run.thread_pool.submit(self._current_task.run)

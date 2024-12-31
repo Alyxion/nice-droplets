@@ -22,7 +22,10 @@ class SearchList(ui.element):
                  poll_interval: float = 0.1
                  ):
         super().__init__()
-        self._on_search = on_search
+        if on_search and not any(str(t) == 'SearchTask' for t in getattr(on_search, '__annotations__', {}).values()):
+            self._on_search = lambda query: SearchTask(on_search, query)
+        else:
+            self._on_search = on_search
         self._min_chars = min_chars
         self._item_label = item_label or str
         self._on_select = on_select
@@ -33,7 +36,6 @@ class SearchList(ui.element):
         self._selected_index = -1
         self._task_executor = TaskExecutor(debounce)
         self._poll_timer: ui.timer | None = None
-
         with self:
             self._suggestions_container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
 
@@ -90,7 +92,6 @@ class SearchList(ui.element):
         """Handle keyboard navigation"""
         key = e.args.get('key', '')
         handled = True
-
         if key == 'ArrowDown':
             if self._selected_index < len(self._items) - 1:
                 self._selected_index += 1
@@ -104,25 +105,18 @@ class SearchList(ui.element):
                 self._handle_item_click(self._items[self._selected_index])
         else:
             handled = False
-
         return handled
 
     def handle_input_change(self, e: ValueChangeEventArguments) -> None:
         """Handle input changes"""
         value = str(e.value or '')
-        
         if len(value) < self._min_chars:
             self.clear()
             return
-
         if not self._on_search:
             return
-
-        # Start new search task with debouncing
         task = self._on_search(value)
         self._task_executor.schedule(task)
-        
-        # Start polling for results
         if self._poll_timer:
             self._poll_timer.cancel()
         self._poll_timer = ui.timer(
@@ -137,18 +131,15 @@ class SearchList(ui.element):
         if task is None:
             return
         if not task.is_done:
-            return
-            
+            return            
         if self._poll_timer:
             self._poll_timer.cancel()
-            self._poll_timer = None
-            
+            self._poll_timer = None            
         if task.has_error:
             print(f"Search error: {task.error}")
             self.clear()
             return
-            
-        results = task.result or []
+        results = task.elements
         self.update_items(results)
 
     def _handle_item_click(self, item: Any) -> None:
