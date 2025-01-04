@@ -2,7 +2,7 @@ from typing import Any, Callable, Optional
 from dataclasses import dataclass
 
 from nicegui import ui
-from nicegui.events import UiEventArguments, Handler, handle_event
+from nicegui.events import UiEventArguments, Handler, handle_event, GenericEventArguments
 from nicegui.dataclasses import KWONLY_SLOTS
 
 from nice_droplets.events import SearchListContentUpdateEventArguments, ItemClickEventArguments
