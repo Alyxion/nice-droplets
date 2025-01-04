@@ -4,10 +4,10 @@ from nicegui.events import ValueChangeEventArguments, Handler
 from nice_droplets.components import SearchTask
 from nice_droplets.components.search_manager import SearchManager, SearchResultHandler
 from nice_droplets.events import SearchListContentUpdateEventArguments
-from nice_droplets.elements.item_list import ItemList
+from nice_droplets.elements.flex_list import FlexList
 
 
-class SearchList(ItemList, SearchResultHandler):
+class SearchList(FlexList, SearchResultHandler):
     """List component showing search results with keyboard navigation"""
 
     def __init__(self,

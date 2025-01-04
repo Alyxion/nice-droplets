@@ -6,7 +6,7 @@ from nice_droplets.components.hot_key_handler import HotKeyHandler
 from nice_droplets.events import SearchListContentUpdateEventArguments
 
 
-class ItemList(ui.element):
+class FlexList(ui.element):
     """Base list component showing selectable items with keyboard navigation"""
 
     def __init__(self,

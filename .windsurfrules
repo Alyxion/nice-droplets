@@ -117,3 +117,23 @@ export default {
     }
 }
 ```
+
+### Events
+
+* New events are usually dataclasses based upon either `UiEventArguments` or `EventArguments`.
+* From a custom component such an event is triggered via handle_event passing the handler to be triggered and an instance of the event arguments.
+* Every event needs to be able to have one or more handlers.
+* The list of handlers of each type have a list of the form `self._show_handlers = [on_show] if on_show else []`.
+* The most important handlers can be passed in the arguments like `on_show: Handler[ShowPopoverEventArguments] | None = None`.
+* After creation a handler can be added to the list of handlers like in this example `on_show(self, handler: Handler[ShowPopoverEventArguments]) -> Self:` which adds the handler to the list of handlers.
+
+```
+@dataclass
+class MyEventArguments(UiEventArguments):
+    message: str
+```
+
+## Coding rules
+
+* Do not use Python template classes.
+* Do not use ABC.
