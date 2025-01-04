@@ -90,34 +90,54 @@ async def main():
         # Default view with simple items
         with ui.column().classes('flex-1'):
             ui.label('Default View (Simple Items)').classes('text-lg font-bold mb-2')
+            def on_simple_click(e):
+                ui.notify(f'Clicked: {e.item}')
             FlexList(
                 items=simple_items,
                 factory=DefaultFactory(),
+                on_item_clicked=on_simple_click,
             ).on('select', lambda e: on_select(e.args['index'], simple_items, 'default'))
 
         # List view with dictionary items
         with ui.column().classes('flex-1'):
             ui.label('Item List View (Rich Items)').classes('text-lg font-bold mb-2')
+            def on_dict_click(e):
+                subtitle = e.item.get('subtitle', '')
+                stamp = e.item.get('stamp', '')
+                msg = f'Clicked: {e.item["label"]}'
+                if subtitle:
+                    msg += f' ({subtitle})'
+                if stamp:
+                    msg += f' - {stamp}'
+                ui.notify(msg, color='primary')
             FlexList(
                 items=dict_items,
                 factory=ItemListFactory(bordered=True),
+                on_item_clicked=on_dict_click,
             ).on('select', lambda e: on_select(e.args['index'], dict_items, 'list'))
 
     with ui.row().classes('w-full gap-4 p-4'):
         # Default view with dataclass items
         with ui.column().classes('flex-1'):
             ui.label('Default View (Dataclass Items)').classes('text-lg font-bold mb-2')
+            def on_person_click(e):
+                ui.notify(f'Clicked: {e.item.name} (Age: {e.item.age})', color='info')
             FlexList(
                 items=person_items,
                 factory=DefaultFactory(),
+                on_item_clicked=on_person_click,
             ).on('select', lambda e: on_select(e.args['index'], person_items, 'person'))
 
         # Table view with dictionary items
         with ui.column().classes('flex-1'):
             ui.label('Table View (Dictionary Items)').classes('text-lg font-bold mb-2')
+            def on_table_click(e):
+                msg = f'Clicked: {e.item["name"]} - Status: {e.item["status"]}, Priority: {e.item["priority"]}'
+                ui.notify(msg, color='secondary')
             FlexList(
                 items=table_items,
                 factory=TableItemFactory(),
+                on_item_clicked=on_table_click,
             ).on('select', lambda e: on_select(e.args['index'], table_items, 'table'))
 
 

@@ -1,4 +1,4 @@
-from typing import Any, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 from nicegui import ui
 
@@ -14,6 +14,7 @@ class FlexListFactory:
         self._container: Optional[ui.element] = None
         self._items: list[Any] = []
         self._item_elements: list[ui.element] = []
+        self._click_handler: Optional[Callable[[int], None]] = None
         
     @property
     def index(self) -> int:
@@ -21,11 +22,10 @@ class FlexListFactory:
     
     @index.setter
     def index(self, value: int) -> None:
-        if 0 <= value < len(self._item_elements) and self._is_item_disabled(self._item_elements[value]):
-            return
-        self._previous_index = self._index
-        self._index = value
-        self._on_index_changed()
+        if 0 <= value < len(self._item_elements):
+            self._previous_index = self._index
+            self._index = value
+            self._on_index_changed()
     
     def create_container(self) -> ui.element:
         """Create and return the container element"""
@@ -35,13 +35,16 @@ class FlexListFactory:
         """Create and return an item element for the given data"""
         raise NotImplementedError()
     
+    def register_click_handler(self, handler: Callable[[int], None]) -> None:
+        """Register a handler for item clicks"""
+        self._click_handler = handler
+    
     def _on_index_changed(self) -> None:
         """Called when the current index changes"""
         if 0 <= self._previous_index < len(self._item_elements):
             self._deselect_item(self._item_elements[self._previous_index])
         if 0 <= self._index < len(self._item_elements):
-            if not self._is_item_disabled(self._item_elements[self._index]):
-                self._select_item(self._item_elements[self._index])
+            self._select_item(self._item_elements[self._index])
     
     def _select_item(self, item: ui.element) -> None:
         """Apply selection styling to an item"""
@@ -51,6 +54,14 @@ class FlexListFactory:
         """Remove selection styling from an item"""
         raise NotImplementedError()
 
+    def _is_item_disabled(self, item: Any) -> bool:
+        """Check if an item is disabled based on its data"""
+        if isinstance(item, dict):
+            return item.get('disabled', False)
+        elif hasattr(item, 'disabled'):
+            return bool(item.disabled)
+        return False
+
     def _enable_item(self, item: ui.element) -> None:
         item.classes('cursor-pointer hover:bg-gray-100', 
                     remove='cursor-not-allowed opacity-50')
@@ -59,18 +70,9 @@ class FlexListFactory:
         item.classes('cursor-not-allowed opacity-50', 
                     remove='cursor-pointer hover:bg-gray-100')
 
-    def _is_item_disabled(self, item: ui.element) -> bool:
-        """Check if an item is disabled based on its data"""
-        if hasattr(item, 'data'):
-            if isinstance(item.data, dict):
-                return item.data.get('disabled', False)
-            elif hasattr(item.data, 'disabled'):
-                return bool(item.data.disabled)
-        return False
-
-    def _update_item_state(self, item: ui.element) -> None:
+    def _update_item_state(self, item: ui.element, data: Any) -> None:
         """Update item's visual state based on its disabled status"""
-        if self._is_item_disabled(item):
+        if self._is_item_disabled(data):
             self._disable_item(item)
         else:
             self._enable_item(item)
@@ -90,10 +92,14 @@ class FlexListFactory:
         self._items = items
         if self._container:
             with self._container:
-                for item_data in items:
+                for i, item_data in enumerate(items):
                     item_element = self.create_item(item_data)
                     item_element.data = item_data  # Store the data in the element
-                    self._update_item_state(item_element)
+                    self._update_item_state(item_element, item_data)
+                    
+                    index = i
+                    item_element.on('click', lambda _, i=index: not self._is_item_disabled(self._items[i]) and self._click_handler and self._click_handler(i))
+                    
                     self._item_elements.append(item_element)
 
 
@@ -113,6 +119,10 @@ class DefaultFactory(FlexListFactory):
         )
         with item:
             ui.label(label).classes('w-full text-left')
+            
+        index = len(self._item_elements)
+        item.on('click', lambda _, i=index: self._click_handler and self._click_handler(i))
+            
         return item
 
     def _select_item(self, item: ui.element) -> None:
@@ -151,7 +161,7 @@ class ItemListFactory(FlexListFactory):
             avatar_square = data.get('avatar_square', False)
             avatar_rounded = data.get('avatar_rounded', False)
             stamp = data.get('stamp', None)
-            disabled = data.get('disabled', False)
+                
         else:
             title = str(data)
             subtitle = ''
@@ -163,10 +173,9 @@ class ItemListFactory(FlexListFactory):
             avatar_square = False
             avatar_rounded = False
             stamp = None
-            disabled = getattr(data, 'disabled', False)
                 
         # Create the item
-        item = Item(clickable=True, disable=disabled, ripple=True)
+        item = Item(clickable=True, ripple=True)
             
         # Add icon or avatar if provided
         if icon or avatar:
@@ -206,12 +215,14 @@ class ItemListFactory(FlexListFactory):
                     section.classes('items-end')
                     ui.label(stamp).classes('text-caption')
                     
+        index = len(self._item_elements)
+        item.on('click', lambda _, i=index: self._click_handler and self._click_handler(i))
+                    
         self._container.add(item)
         return item
 
     def _select_item(self, item: ui.element) -> None:
-        if not self._is_item_disabled(item):
-            item.classes('bg-primary text-white')
+        item.classes('bg-primary text-white')
         
     def _deselect_item(self, item: ui.element) -> None:
         item.classes(remove='bg-primary text-white')
@@ -258,7 +269,6 @@ class TableItemFactory(FlexListFactory):
             columns = [
                 {'name': key, 'label': key.title(), 'field': key}
                 for key in sample_item.keys()
-                if key not in ('disabled',)
             ]
         else:
             # For non-dict items, raise an error
@@ -266,10 +276,9 @@ class TableItemFactory(FlexListFactory):
             
         # Convert items to table rows
         rows = []
-        for item in items:
+        for i, item in enumerate(items):
             if isinstance(item, dict):
-                # Filter out special keys
-                row = {k: v for k, v in item.items() if k not in ('disabled',)}
+                row = {k: v for k, v in item.items()}
             else:
                 row = {'value': str(item)}
             rows.append(row)
@@ -277,7 +286,15 @@ class TableItemFactory(FlexListFactory):
         if self._container:
             self._container.columns = columns
             self._container.rows = rows
-            self._container.on('select', lambda e: self._handle_table_select(e))
+            
+            # Handle row clicks
+            if self._click_handler:
+                def on_row_click(e: Any) -> None:
+                    row_index = e.args.get('row', {}).get('index', -1)
+                    if row_index >= 0:
+                        self._click_handler(row_index)
+                
+                self._container.on('row-click', on_row_click)
 
     def _handle_table_select(self, e: Any) -> None:
         """Handle table selection event"""
