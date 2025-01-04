@@ -26,10 +26,7 @@ class SearchList(FlexList, SearchResultHandler):
             on_content_update=on_content_update,
             factory=factory
         )
-        if on_search and not any(str(t) == 'SearchTask' for t in getattr(on_search, '__annotations__', {}).values()):
-            self._on_search = lambda query: SearchTask(on_search, query)
-        else:
-            self._on_search = on_search
+        self._on_search = on_search
             
         self._search_manager = SearchManager(
             on_search=self._on_search,

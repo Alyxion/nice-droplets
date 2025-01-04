@@ -21,6 +21,7 @@ products = [
 class TableSearchTask(SearchTask):
 
     def __init__(self, products: list[dict], query: str):
+        super().__init__()
         self.products = products
         self.query = query
     
@@ -31,7 +32,7 @@ class TableSearchTask(SearchTask):
             product for product in self.products
             if any(str(value).lower().find(query) >= 0 for value in product.values())            
         ]
-        self.set_results(results)
+        self.set_elements(results)
     
 @ui.page('/')
 def index():
@@ -45,7 +46,7 @@ def index():
     # Product search with table view factory
     with ui.input(label='Search products', placeholder='Type to search...') as product_input:
         with dui.typeahead(
-            on_search=lambda query: TableSearchTask(products, query),
+            on_search=create_search_task,
             min_chars=1,
             on_select=lambda product: product_input.set_value(product['name']),
             factory=table_factory
