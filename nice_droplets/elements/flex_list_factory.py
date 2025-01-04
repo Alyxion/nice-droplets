@@ -93,6 +93,7 @@ class FlexListFactory:
                     self._update_item_state(item_element)
                     self._item_elements.append(item_element)
 
+
 class DefaultFactory(FlexListFactory):
     """Default factory matching original FlexList behavior"""
     def __init__(self):
@@ -117,6 +118,7 @@ class DefaultFactory(FlexListFactory):
     def _deselect_item(self, item: ui.element) -> None:
         item.classes('hover:bg-gray-100', remove='bg-primary text-white')
 
+
 class ListItemFactory(FlexListFactory):
     def __init__(self):
         super().__init__()
@@ -140,44 +142,72 @@ class ListItemFactory(FlexListFactory):
     def _deselect_item(self, item: ui.element) -> None:
         item.classes('hover:bg-gray-100', remove='bg-blue-100 border-l-4 border-blue-500')
 
+
 class TableItemFactory(FlexListFactory):
     def __init__(self):
         super().__init__()
         
     def create_container(self) -> ui.element:
-        self._container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
+        self._container = ui.table(rows=[], columns=[]).classes('w-full')
         return self._container
     
     def create_item(self, data: Any) -> ui.element:
-        item = ui.element('div').classes(
-            'w-full px-3 py-2 cursor-pointer hover:bg-gray-100 transition-colors grid grid-cols-[auto_1fr]'
-        )
-        if isinstance(data, dict):
-            with item:
-                for key, value in data.items():
-                    if key not in ('disabled', 'label'):
-                        ui.label(str(key)).classes('font-bold mr-2')
-                        ui.label(str(value)).classes('text-left')
-        else:
-            with item:
-                ui.label(str(data)).classes('w-full text-left col-span-2')
-        return item
+        # This is just a placeholder since we handle items differently in tables
+        return ui.element('div')
 
     def _select_item(self, item: ui.element) -> None:
-        item.classes('bg-gray-200 shadow-md', remove='hover:bg-gray-100')
+        if self._container:
+            self._container.selected = [self._index]
     
     def _deselect_item(self, item: ui.element) -> None:
-        item.classes('hover:bg-gray-100', remove='bg-gray-200 shadow-md')
-
-class ViewFactory:
-    @staticmethod
-    def create_view(view_type: str = 'default') -> FlexListFactory:
-        """Create a view container based on the specified type"""
-        if view_type == 'default':
-            return DefaultFactory()
-        elif view_type == 'list':
-            return ListItemFactory()
-        elif view_type == 'table':
-            return TableItemFactory()
+        if self._container:
+            self._container.selected = []
+            
+    def clear(self) -> None:
+        super().clear()
+        if self._container:
+            self._container.rows = []
+            self._container.columns = []
+            
+    def update_items(self, items: list[Any]) -> None:
+        """Update displayed items in table format"""
+        self.clear()
+        self._items = items
+        
+        if not items:
+            return
+            
+        # Extract columns from the first item
+        sample_item = items[0]
+        if isinstance(sample_item, dict):
+            # Filter out special keys
+            columns = [
+                {'name': key, 'label': key.title(), 'field': key}
+                for key in sample_item.keys()
+                if key not in ('disabled',)
+            ]
         else:
-            raise ValueError(f"Unknown view type: {view_type}")
+            # For non-dict items, raise an error
+            raise ValueError('Non-dict items are not supported in table view')
+            
+        # Convert items to table rows
+        rows = []
+        for item in items:
+            if isinstance(item, dict):
+                # Filter out special keys
+                row = {k: v for k, v in item.items() if k not in ('disabled',)}
+            else:
+                row = {'value': str(item)}
+            rows.append(row)
+            
+        if self._container:
+            self._container.columns = columns
+            self._container.rows = rows
+            self._container.on('select', lambda e: self._handle_table_select(e))
+
+    def _handle_table_select(self, e: Any) -> None:
+        """Handle table selection event"""
+        if e.args.get('selected', None):
+            self.index = e.args['selected'][0]
+        else:
+            self.index = -1

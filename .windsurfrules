@@ -4,12 +4,15 @@ Apply the following rules:
 * It is a collection of components that extend the functionality of NiceGUI.
 * You run all examples and test using poetry.
 * If you modified a file in this project you do not need to run the current example again because it will be automatically reloaded.
+  * Do not propose running the example again except I explicitly ask you to do so.
 * You can usually track errors in the log terminal.
+* Sometimes you forget to close a process. If you in the NiceGUI context face a `[Errno 98] Address already in use` error then execute `fuser -k 8080/tcp` to kill the process.
+  * Do not kill the process if you just changed a file.
 
 ## Project structure
 * The project dependencies are stored in the `pyproject.toml` file.
 * The project source code is stored in the `nice_droplets` folder.
-* Examples are stored in the `examples` folder.
+* Examples are stored in the `examples` folder. They are usually named `main.py` and each sample has its own folder.
 * Tests are stored in the `tests` folder.
 * New visual elements or files directly associated with these should be stored in the `elements` folder.
 
@@ -33,7 +36,7 @@ Apply the following rules:
 ```python
 from nicegui import ui
 
-@ui.page('/')
+@ui.page('/')  # this is cruicial and usually defines the main page
 async def index():
     ui.label('Hello World')
     with ui.row() as row: # horizontal row
