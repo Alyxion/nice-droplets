@@ -25,13 +25,7 @@ class ItemLabel(TextElement, component=str(Path(__file__).parent / 'item_label.j
             lines: Number of lines to show before truncating (only works with caption)
         """
         super().__init__(text=text)
-        
-        if caption:
-            self.classes('q-item-label--caption')
-        elif header:
-            self.classes('q-item-label--header')
-        elif overline:
-            self.classes('q-item-label--overline')
-            
-        if lines is not None:
-            self._props['lines'] = lines
+        self._props["caption"] = caption
+        self._props["header"] = header
+        self._props["overline"] = overline
+        self._props["lines"] = lines
