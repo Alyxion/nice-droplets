@@ -45,7 +45,7 @@ def main():
                 def on_item_clicked(e) -> None:
                     ui.notify(f'Clicked item {e.item}')
                     
-                list.on_item_clicked(on_item_clicked)
+                list.on_select(on_item_clicked)
                 
         # Rich items
         with ui.card().classes('w-80'):
@@ -73,7 +73,7 @@ def main():
                     item = e.item
                     ui.notify(f'Clicked item {item["label"]} ({item["subtitle"]}) at {item["stamp"]}')
                     
-                list.on_item_clicked(on_item_clicked)
+                list.on_select(on_item_clicked)
                 
         # Dataclass items
         with ui.card().classes('w-80'):
@@ -89,7 +89,7 @@ def main():
                     person = e.item
                     ui.notify(f'Clicked person {person.name} ({person.age} years old)')
                     
-                list.on_item_clicked(on_item_clicked)
+                list.on_select(on_item_clicked)
                 
         # Table items
         with ui.card().classes('w-80'):
@@ -106,7 +106,7 @@ def main():
                     project = e.item
                     ui.notify(f'Clicked project {project.name} ({project.status}, {project.priority} priority)')
                     
-                list.on_item_clicked(on_item_clicked)
+                list.on_select(on_item_clicked)
 
 
 ui.run()

@@ -1,21 +1,23 @@
 from typing import Any, Callable, Optional, TypeVar
 
 from nicegui import ui
+from nicegui.events import handle_event
 
 from nice_droplets.elements.item import Item
 from nice_droplets.elements.list import List
 from nice_droplets.elements.item_section import ItemSection
+from nice_droplets.events import FlexFactoryItemClickedArguments
 
 T = TypeVar('T')
 
 class FlexListFactory:
-    def __init__(self):
+    def __init__(self, *, on_item_click: Optional[Callable[[FlexFactoryItemClickedArguments], None]] = None):
         self._index = -1
         self._previous_index = -1
         self._container: Optional[ui.element] = None
         self._items: list[Any] = []
         self._item_elements: list[ui.element] = []
-        self._click_handler: Optional[Callable[[int], None]] = None
+        self._click_handler: list[Callable[[FlexListItemClickedArguments], None]] = [on_item_click] if on_item_click else []
         
     @property
     def index(self) -> int:
@@ -23,10 +25,12 @@ class FlexListFactory:
     
     @index.setter
     def index(self, value: int) -> None:
-        if 0 <= value < len(self._item_elements):
-            self._previous_index = self._index
-            self._index = value
-            self._on_index_changed()
+        self._previous_index = self._index
+        self._index = value
+        self._handle_index_changed()
+
+    def on_click(self, handler: Callable[[FlexFactoryItemClickedArguments], None]) -> None:
+        self._click_handler.append(handler)
     
     def create_container(self) -> ui.element:
         """Create and return the container element"""
@@ -34,19 +38,15 @@ class FlexListFactory:
     
     def create_item(self, data: Any) -> ui.element:
         """Create and return an item element for the given data"""
-        raise NotImplementedError()
+        raise NotImplementedError()    
     
-    def register_click_handler(self, handler: Callable[[int], None]) -> None:
-        """Register a handler for item clicks"""
-        self._click_handler = handler
-    
-    def _on_index_changed(self) -> None:
+    def _handle_index_changed(self) -> None:
         """Called when the current index changes"""
         if 0 <= self._previous_index < len(self._item_elements):
             self._deselect_item(self._item_elements[self._previous_index])
         if 0 <= self._index < len(self._item_elements):
             self._select_item(self._item_elements[self._index])
-    
+
     def _select_item(self, item: ui.element) -> None:
         """Apply selection styling to an item"""
         raise NotImplementedError()
@@ -55,7 +55,7 @@ class FlexListFactory:
         """Remove selection styling from an item"""
         raise NotImplementedError()
 
-    def _is_item_disabled(self, item: Any) -> bool:
+    def is_item_disabled(self, item: Any) -> bool:
         """Check if an item is disabled based on its data"""
         if isinstance(item, dict):
             return item.get('disabled', False)
@@ -73,7 +73,7 @@ class FlexListFactory:
 
     def _update_item_state(self, item: ui.element, data: Any) -> None:
         """Update item's visual state based on its disabled status"""
-        if self._is_item_disabled(data):
+        if self.is_item_disabled(data):
             self._disable_item(item)
         else:
             self._enable_item(item)
@@ -87,6 +87,16 @@ class FlexListFactory:
         self._index = -1
         self._previous_index = -1
 
+    def handle_item_click(self, element: int | ui.element) -> None:
+        if isinstance(element, ui.element):
+            index = self._item_elements.index(element)
+        else:
+            index = element
+        element = self._item_elements[index] if index < len(self._item_elements) else None        
+        item = self._items[index] if index < len(self._items) else None
+        for handler in self._click_handler:
+            handle_event(handler, FlexFactoryItemClickedArguments(sender=self, element=element, index=index, item=item))
+
     def update_items(self, items: list[Any]) -> None:
         """Update displayed items"""
         self.clear()
@@ -95,12 +105,7 @@ class FlexListFactory:
             with self._container:
                 for i, item_data in enumerate(items):
                     item_element = self.create_item(item_data)
-                    item_element.data = item_data  # Store the data in the element
                     self._update_item_state(item_element, item_data)
-                    
-                    index = i
-                    item_element.on('click', lambda _, i=index: not self._is_item_disabled(self._items[i]) and self._click_handler and self._click_handler(i))
-                    
                     self._item_elements.append(item_element)
 
 
@@ -120,9 +125,7 @@ class DefaultFactory(FlexListFactory):
         )
         with item:
             ui.label(label).classes('w-full text-left')
-
-            index = self._index
-            item.on('click', lambda _, i=index: self._click_handler and self._click_handler(i))
+            item.on('click', lambda _: self.handle_item_click(item))
         return item
 
     def _select_item(self, item: ui.element) -> None:
@@ -212,8 +215,10 @@ class ItemListFactory(FlexListFactory):
                 with ItemSection(side=True) as section:
                     section.classes('items-end')
                     ui.label(stamp).classes('text-caption')
+
+        # Add click handler
+        item.on('click', lambda _: self.handle_item_click(item))
                     
-        self._container.add(item)
         return item
 
     def _select_item(self, item: ui.element) -> None:
@@ -291,15 +296,14 @@ class TableItemFactory(FlexListFactory):
             )
             
         # Handle row clicks
-        if self._click_handler:
-            def on_row_click(e: Any) -> None:
-                if len(e.args) < 2:
-                    return
-                element = e.args[1]
-                if not "_index" in element:
-                    return
-                row_index = element['_index']                
-                if not self._is_item_disabled(self._items[row_index]):
-                    self._click_handler(row_index)
-            
-            self._table.on('row-click', on_row_click)
+        def on_row_click(e: Any) -> None:
+            if len(e.args) < 2:
+                return
+            element = e.args[1]
+            if not "_index" in element:
+                return
+            row_index = element['_index']                
+            if not self.is_item_disabled(row_index):
+                self.handle_item_click(row_index)
+    
+        self._table.on('row-click', on_row_click)

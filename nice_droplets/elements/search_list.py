@@ -42,6 +42,8 @@ class SearchList(FlexList, SearchResultHandler):
     def handle_input_change(self, e: ValueChangeEventArguments) -> None:
         """Handle input changes"""
         value = str(e.value or '')
+        if len(value) < self._search_manager._min_chars:
+            return
         self._search_manager.handle_search(value)
 
     def on_search_started(self) -> None:
@@ -50,16 +52,11 @@ class SearchList(FlexList, SearchResultHandler):
 
     def on_search_error(self, error: Exception) -> None:
         """Called when a search fails."""
-        print(f"Search error: {error}")
         self.clear()
 
     def on_search_results(self, results: list[Any]) -> None:
         """Called when search results are available."""
         self.update_items(results)
-
-    def on_search_completed(self) -> None:
-        """Called when a search is completed."""
-        pass
 
     def cleanup(self) -> None:
         """Clean up resources."""

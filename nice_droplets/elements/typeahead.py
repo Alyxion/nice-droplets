@@ -48,6 +48,7 @@ class Typeahead(Popover):
         self._current_target: ValueElement | None = None
         self._event_helper: EventHandlerTracker | None = None
         self._min_chars = min_chars
+        self._selected_value = None
         
         self._hot_key_handler = HotKeyHandler({
             'showSuggestions': {
@@ -118,15 +119,21 @@ class Typeahead(Popover):
         """Handle input value changes."""
         if e.sender != self._current_target:
             return
+        if self._selected_value == e.value:  # catch once
+            self._selected_value = None
+            return
         self._search_list.handle_input_change(e)
 
-    def _handle_item_select(self, item: Any) -> None:
+    def _handle_item_select(self, e: Any) -> None:
         """Handle when a suggestion item is selected."""
         if not self._current_target:
             return
-        self._current_target.set_value(item)
+        value = e.item
+        if isinstance(value, str):
+            self._selected_value = value
+            self._current_target.set_value(value)
         self.hide()
 
     def _handle_content_update(self, e: SearchListContentUpdateEventArguments) -> None:
         """Handle when the search list content is updated."""
-        self.keep_hidden = len(self._search_list.items) == 0
+        self.keep_hidden = len(self._search_list.items) == 0 or not self._current_target
