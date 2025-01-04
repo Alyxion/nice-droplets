@@ -1,3 +1,4 @@
+from typing import Any
 from dataclasses import dataclass
 
 from nicegui.dataclasses import KWONLY_SLOTS
@@ -18,4 +19,11 @@ class HidePopoverEventArguments(UiEventArguments):
 @dataclass(**KWONLY_SLOTS)
 class SearchListContentUpdateEventArguments(UiEventArguments):
     """Event arguments for when a search list's content is updated."""
-    pass
+    items: list[Any]
+
+
+
+@dataclass(**KWONLY_SLOTS)
+class ItemClickEventArguments(UiEventArguments):    
+    item: Any
+    index: int
