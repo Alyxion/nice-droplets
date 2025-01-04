@@ -1,19 +1,13 @@
 from typing import Any, Callable, Optional
+from dataclasses import dataclass
 
 from nicegui import ui
-from nicegui.events import GenericEventArguments, Handler, handle_event
+from nicegui.events import UiEventArguments, Handler, handle_event
+from nicegui.dataclasses import KWONLY_SLOTS
 
-from nice_droplets.events import SearchListContentUpdateEventArguments
-from .flex_list_factory import FlexListFactory, DefaultFactory
+from nice_droplets.events import SearchListContentUpdateEventArguments, ItemClickEventArguments
+from nice_droplets.elements.flex_list_factory import FlexListFactory, DefaultFactory
 
-
-class ItemClickEventArguments(GenericEventArguments):
-    """Arguments for item click events"""
-    def __init__(self, item: Any, index: int):
-        """Initialize click event arguments"""
-        super().__init__()
-        self.item = item
-        self.index = index
 
 
 class FlexList(ui.element):
@@ -53,13 +47,13 @@ class FlexList(ui.element):
         self._view.update_items(items)
         
         for handler in self._content_update_handlers:
-            self.handle_event(handler, SearchListContentUpdateEventArguments(items))
+            handle_event(handler, SearchListContentUpdateEventArguments(items))
 
     def _handle_item_click(self, index: int) -> None:
         """Internal handler for item clicks"""
         if 0 <= index < len(self._items):
             for handler in self._item_click_handlers:
-                self.handle_event(handler, ItemClickEventArguments(self._items[index], index))
+                handle_event(handler, ItemClickEventArguments(sender=self, client=self.client, item=self._items[index], index=index))
 
     @property
     def index(self) -> int:

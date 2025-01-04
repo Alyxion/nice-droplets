@@ -226,33 +226,36 @@ class ItemListFactory(FlexListFactory):
 class TableItemFactory(FlexListFactory):
     def __init__(self):
         super().__init__()
+        self._table = None
         
     def create_container(self) -> ui.element:
-        self._container = ui.table(rows=[], columns=[])
+        self._container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
         return self._container
     
     def create_item(self, data: Any) -> ui.element:
-        # This is just a placeholder since we handle items differently in tables
-        return ui.element('div')
+        # Items are handled in update_items
+        return None
 
     def _select_item(self, item: ui.element) -> None:
-        if self._container:
-            self._container.selected = [self._index]
+        if self._table:
+            self._table.selected = [self._index]
     
     def _deselect_item(self, item: ui.element) -> None:
-        if self._container:
-            self._container.selected = []
+        if self._table:
+            self._table.selected = []
             
     def clear(self) -> None:
         super().clear()
-        if self._container:
-            self._container.rows = []
-            self._container.columns = []
+        self._container.clear()
+        self._table = None
+        self._rows = []
             
     def update_items(self, items: list[Any]) -> None:
         """Update displayed items in table format"""
         self.clear()
         self._items = items
+        self._rows = []
+        self._row_dict = {}
         
         if not items:
             return
@@ -264,28 +267,39 @@ class TableItemFactory(FlexListFactory):
                 {'name': key, 'label': key.title(), 'field': key}
                 for key in sample_item.keys()
             ]
+            rows = [item.copy() for item in items]
         else:
-            # For non-dict items, raise an error
-            raise ValueError('Non-dict items are not supported in table view')
+            # For dataclass objects, convert to dict
+            data_dict = sample_item.to_dict()
+            columns = [
+                {'name': key, 'label': key.title(), 'field': key}
+                for key in data_dict.keys()
+            ]
+            rows = [item.to_dict() for item in items]
+
+        # add invisible key column to every row
+        for index, row in enumerate(rows):
+            row['_index'] = index
+
+        self._rows = rows
             
-        # Convert items to table rows
-        rows = []
-        for i, item in enumerate(items):
-            if isinstance(item, dict):
-                row = {k: v for k, v in item.items()}
-            else:
-                row = {'value': str(item)}
-            rows.append(row)
+        # Create table with rows and columns
+        with self._container:
+            self._table = ui.table(
+                columns=columns,
+                rows=rows,                
+            )
             
-        if self._container:
-            self._container.columns = columns
-            self._container.rows = rows
+        # Handle row clicks
+        if self._click_handler:
+            def on_row_click(e: Any) -> None:
+                if len(e.args) < 2:
+                    return
+                element = e.args[1]
+                if not "_index" in element:
+                    return
+                row_index = element['_index']                
+                if not self._is_item_disabled(self._items[row_index]):
+                    self._click_handler(row_index)
             
-            # Handle row clicks
-            if self._click_handler:
-                def on_row_click(e: Any) -> None:
-                    row_index = e.args.get('row', {}).get('index', -1)
-                    if row_index >= 0 and not self._is_item_disabled(self._items[row_index]):
-                        self._click_handler(row_index)
-                
-                self._container.on('row-click', on_row_click)
+            self._table.on('row-click', on_row_click)
