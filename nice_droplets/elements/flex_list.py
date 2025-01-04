@@ -41,6 +41,9 @@ class FlexList(ui.element):
         """Add item click handler"""
         self._item_click_handlers.append(handler)
 
+    def _handle_key(self, e: GenericEventArguments) -> None:
+        pass
+
     def update_items(self, items: list[Any]) -> None:
         """Update the list of items"""
         self._items = items

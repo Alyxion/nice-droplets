@@ -9,6 +9,7 @@ from nice_droplets.elements.search_list import SearchList
 from nice_droplets.components import EventHandlerTracker, SearchTask
 from nice_droplets.components.hot_key_handler import HotKeyHandler
 from nice_droplets.events import SearchListContentUpdateEventArguments
+from nice_droplets.elements.flex_list import FlexListFactory
 
 
 class Typeahead(Popover):
@@ -24,7 +25,8 @@ class Typeahead(Popover):
                  min_chars: int = 1,
                  debounce: int = 0.1,
                  on_select: Callable[[Any], None] | None = None,
-                 observe_parent: bool = True,                 
+                 observe_parent: bool = True,     
+                 factory: FlexListFactory | None = None            
                  ):
         """Initialize the typeahead component.
         
@@ -33,13 +35,14 @@ class Typeahead(Popover):
         :param debounce: Time to wait before executing a search after input changes.
         :param on_select: Function to call when an item is selected.
         :param observe_parent: Whether to observe the parent element for focus events.
+        :param factory: The factory to use for creating the flex list.
         """
         super().__init__(
             show_events=['focus', 'input'],
             hide_events=['blur'],
             docking_side='bottom left',
             observe_parent=False,
-            default_style=True
+            default_style=True,            
         )
         self.keep_hidden = True
         self._current_target: ValueElement | None = None
@@ -59,7 +62,8 @@ class Typeahead(Popover):
                 min_chars=min_chars,
                 debounce=debounce,
                 on_select=lambda item: self._handle_item_select(item),
-                on_content_update=self._handle_content_update
+                on_content_update=self._handle_content_update,
+                factory=factory
             )
 
         if observe_parent:
@@ -88,7 +92,7 @@ class Typeahead(Popover):
         if e.sender != self._current_target:
             return
             
-        if self._search_list.handle_key(e):
+        if self._search_list._handle_key(e):
             pass
 
     def _handle_show(self, e: GenericEventArguments) -> None:

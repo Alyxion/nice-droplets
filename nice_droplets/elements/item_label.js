@@ -1,8 +1,8 @@
 export default {
     template: `
-        <div class="q-item-label">
+        <q-item-label>
             <slot>{{ text }}</slot>
-        </div>
+        </q-item-label>
     `,
     props: {
         text: String
