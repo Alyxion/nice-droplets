@@ -22,27 +22,50 @@ async def main():
     simple_items = ['Item 1', 'Item 2', 'Item 3 (Disabled)', 'Item 4', 'Item 5']
     dict_items = [
         {
-            'label': 'First Item',
-            'subtitle': 'This is a subtitle',
+            'label': 'Icon Avatar',
+            'subtitle': 'Using icon with colors',
             'value': 100,
             'icon': 'star',
+            'avatar_color': 'primary',
+            'avatar_text_color': 'white',
             'stamp': '5 mins ago'
         },
         {
-            'label': 'Second Item',
+            'label': 'Disabled Item',
             'subtitle': 'Disabled item example',
             'value': 200,
             'icon': 'warning',
+            'avatar_color': 'warning',
+            'avatar_text_color': 'white',
             'disabled': True,
             'stamp': '1 hour ago'
         },
         {
-            'label': 'Third Item',
-            'subtitle': 'With avatar instead of icon',
+            'label': 'Square Avatar',
+            'subtitle': 'Square image avatar',
             'value': 300,
-            'avatar': 'https://avatars.githubusercontent.com/u/1',
+            'avatar': 'https://cdn.quasar.dev/img/boy-avatar.png',
+            'avatar_square': True,
             'stamp': 'yesterday'
         },
+        {
+            'label': 'Rounded Avatar',
+            'subtitle': 'Rounded image avatar',
+            'value': 400,
+            'avatar': 'https://cdn.quasar.dev/img/mountains.jpg',
+            'avatar_rounded': True,
+            'stamp': '2 days ago'
+        },
+        {
+            'label': 'Letter Avatar',
+            'subtitle': 'Using text in avatar',
+            'value': 500,
+            'icon': 'A',
+            'avatar_color': 'purple',
+            'avatar_text_color': 'white',
+            'avatar_rounded': True,
+            'stamp': '1 week ago'
+        }
     ]
     person_items = [
         Person('Alice', 25),
@@ -77,7 +100,7 @@ async def main():
             ui.label('Item List View (Rich Items)').classes('text-lg font-bold mb-2')
             FlexList(
                 items=dict_items,
-                factory=ItemListFactory(),
+                factory=ItemListFactory(bordered=True),
             ).on('select', lambda e: on_select(e.args['index'], dict_items, 'list'))
 
     with ui.row().classes('w-full gap-4 p-4'):

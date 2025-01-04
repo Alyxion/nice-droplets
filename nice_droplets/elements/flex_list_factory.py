@@ -2,6 +2,9 @@ from typing import Any, Optional, TypeVar
 
 from nicegui import ui
 
+from nice_droplets.elements.item import Item
+from nice_droplets.elements.itemlist import ItemList
+
 T = TypeVar('T')
 
 class FlexListFactory:
@@ -143,6 +146,10 @@ class ItemListFactory(FlexListFactory):
             overline = str(data.get('overline', ''))
             icon = data.get('icon', None)
             avatar = data.get('avatar', None)
+            avatar_color = data.get('avatar_color', None)
+            avatar_text_color = data.get('avatar_text_color', None)
+            avatar_square = data.get('avatar_square', False)
+            avatar_rounded = data.get('avatar_rounded', False)
             stamp = data.get('stamp', None)
             disabled = data.get('disabled', False)
         else:
@@ -151,6 +158,10 @@ class ItemListFactory(FlexListFactory):
             overline = ''
             icon = None
             avatar = None
+            avatar_color = None
+            avatar_text_color = None
+            avatar_square = False
+            avatar_rounded = False
             stamp = None
             disabled = getattr(data, 'disabled', False)
                 
@@ -163,10 +174,22 @@ class ItemListFactory(FlexListFactory):
                 section = item.add_section(avatar=True)
                 if icon:
                     with section:
-                        ui.icon(icon)
+                        ui.avatar(
+                            icon=icon,
+                            color=avatar_color,
+                            text_color=avatar_text_color,
+                            square=avatar_square,
+                            rounded=avatar_rounded
+                        )
                 elif avatar:
                     with section:
-                        ui.image(avatar).classes('w-8 h-8 rounded-full')
+                        with ui.avatar(
+                            color=avatar_color,
+                            text_color=avatar_text_color,
+                            square=avatar_square,
+                            rounded=avatar_rounded
+                        ):
+                            ui.image(avatar)
                 
         # Add main content section
         with item:
@@ -179,8 +202,9 @@ class ItemListFactory(FlexListFactory):
         # Add timestamp if provided
         if stamp:
             with item:
-                item.add_section(side=True).classes('items-end')\
-                    .add(ui.label(stamp).classes('text-caption'))
+                with item.add_section(side=True) as section:
+                    section.classes('items-end')
+                    ui.label(stamp).classes('text-caption')
                     
         self._container.add(item)
         return item
@@ -198,7 +222,7 @@ class TableItemFactory(FlexListFactory):
         super().__init__()
         
     def create_container(self) -> ui.element:
-        self._container = ui.table(rows=[], columns=[]).classes('w-full')
+        self._container = ui.table(rows=[], columns=[])
         return self._container
     
     def create_item(self, data: Any) -> ui.element:
