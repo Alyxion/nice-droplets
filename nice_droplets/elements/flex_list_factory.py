@@ -119,28 +119,78 @@ class DefaultFactory(FlexListFactory):
         item.classes('hover:bg-gray-100', remove='bg-primary text-white')
 
 
-class ListItemFactory(FlexListFactory):
-    def __init__(self):
+class ItemListFactory(FlexListFactory):
+    """Factory for creating item lists using Quasar components"""
+    def __init__(self, *, bordered: bool = False, separator: bool = True, padding: bool = True):
         super().__init__()
-        
+        self._bordered = bordered
+        self._separator = separator
+        self._padding = padding
+            
     def create_container(self) -> ui.element:
-        self._container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
-        return self._container
-    
-    def create_item(self, data: Any) -> ui.element:
-        label = str(data) if not isinstance(data, dict) else str(data.get('label', ''))
-        item = ui.element('div').classes(
-            'w-full px-3 py-2 cursor-pointer hover:bg-gray-100 transition-colors'
+        self._container = ItemList(
+            bordered=self._bordered,
+            separator=self._separator,
+            padding=self._padding
         )
+        return self._container
+        
+    def create_item(self, data: Any) -> ui.element:
+        # Extract item properties
+        if isinstance(data, dict):
+            title = str(data.get('label', data.get('title', '')))
+            subtitle = str(data.get('subtitle', ''))
+            overline = str(data.get('overline', ''))
+            icon = data.get('icon', None)
+            avatar = data.get('avatar', None)
+            stamp = data.get('stamp', None)
+            disabled = data.get('disabled', False)
+        else:
+            title = str(data)
+            subtitle = ''
+            overline = ''
+            icon = None
+            avatar = None
+            stamp = None
+            disabled = getattr(data, 'disabled', False)
+                
+        # Create the item
+        item = Item(clickable=True, disable=disabled, ripple=True)
+            
+        # Add icon or avatar if provided
+        if icon or avatar:
+            with item:
+                section = item.add_section(avatar=True)
+                if icon:
+                    with section:
+                        ui.icon(icon)
+                elif avatar:
+                    with section:
+                        ui.image(avatar).classes('w-8 h-8 rounded-full')
+                
+        # Add main content section
         with item:
-            ui.label(label).classes('w-full text-left')
+            section = item.add_section(
+                overline=overline if overline else None,
+                label=title,
+                caption=subtitle if subtitle else None
+            )
+                    
+        # Add timestamp if provided
+        if stamp:
+            with item:
+                item.add_section(side=True).classes('items-end')\
+                    .add(ui.label(stamp).classes('text-caption'))
+                    
+        self._container.add(item)
         return item
 
     def _select_item(self, item: ui.element) -> None:
-        item.classes('bg-blue-100 border-l-4 border-blue-500', remove='hover:bg-gray-100')
-    
+        if not self._is_item_disabled(item):
+            item.classes('bg-primary text-white')
+        
     def _deselect_item(self, item: ui.element) -> None:
-        item.classes('hover:bg-gray-100', remove='bg-blue-100 border-l-4 border-blue-500')
+        item.classes(remove='bg-primary text-white')
 
 
 class TableItemFactory(FlexListFactory):

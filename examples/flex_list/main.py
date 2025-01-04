@@ -4,7 +4,7 @@ from typing import Any
 from nicegui import ui
 
 from nice_droplets.elements.flex_list import FlexList
-from nice_droplets.elements.flex_list_factory import DefaultFactory, ListItemFactory, TableItemFactory
+from nice_droplets.elements.flex_list_factory import DefaultFactory, ItemListFactory, TableItemFactory
 
 
 @dataclass
@@ -21,9 +21,28 @@ async def main():
     # Sample data
     simple_items = ['Item 1', 'Item 2', 'Item 3 (Disabled)', 'Item 4', 'Item 5']
     dict_items = [
-        {'label': 'First Item', 'value': 100},
-        {'label': 'Second Item', 'value': 200, 'disabled': True},
-        {'label': 'Third Item', 'value': 300},
+        {
+            'label': 'First Item',
+            'subtitle': 'This is a subtitle',
+            'value': 100,
+            'icon': 'star',
+            'stamp': '5 mins ago'
+        },
+        {
+            'label': 'Second Item',
+            'subtitle': 'Disabled item example',
+            'value': 200,
+            'icon': 'warning',
+            'disabled': True,
+            'stamp': '1 hour ago'
+        },
+        {
+            'label': 'Third Item',
+            'subtitle': 'With avatar instead of icon',
+            'value': 300,
+            'avatar': 'https://avatars.githubusercontent.com/u/1',
+            'stamp': 'yesterday'
+        },
     ]
     person_items = [
         Person('Alice', 25),
@@ -37,7 +56,12 @@ async def main():
     ]
 
     def on_select(index: int, items: list[Any], list_type: str) -> None:
-        ui.notify(f'Selected {items[index]} in {list_type} list')
+        item = items[index]
+        if isinstance(item, dict):
+            label = item.get('label', str(item))
+        else:
+            label = str(item)
+        ui.notify(f'Selected {label} in {list_type} list')
 
     with ui.row().classes('w-full gap-4 p-4'):
         # Default view with simple items
@@ -50,10 +74,10 @@ async def main():
 
         # List view with dictionary items
         with ui.column().classes('flex-1'):
-            ui.label('List View (Dictionary Items)').classes('text-lg font-bold mb-2')
+            ui.label('Item List View (Rich Items)').classes('text-lg font-bold mb-2')
             FlexList(
                 items=dict_items,
-                factory=ListItemFactory(),
+                factory=ItemListFactory(),
             ).on('select', lambda e: on_select(e.args['index'], dict_items, 'list'))
 
     with ui.row().classes('w-full gap-4 p-4'):
