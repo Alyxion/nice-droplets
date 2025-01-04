@@ -25,6 +25,16 @@ class Project:
             'status': self.status,
             'priority': self.priority
         }
+
+class PersonListFactory(ItemListFactory):
+    def setup_item(self, item, data) -> ui.element:
+        with item:  # add item section, avatar and text content
+            with dui.item_section(avatar=True):
+                ui.icon('person').classes('text-2xl')            
+            with dui.item_section():
+                ui.label(data.name).classes('text-h6')
+                ui.label(f'{data.age} years old').classes('text-body2')
+
     
     
 @ui.page('/')
@@ -50,7 +60,7 @@ def main():
         # Rich items
         with ui.card().classes('w-80'):
             ui.label('Rich Items').classes('text-h6 q-pa-md')
-            with dui.flex_list(factory=ItemListFactory()) as list:
+            with dui.flex_list(factory=ItemListFactory(bordered=True, separator=True, padding=True)) as list:
                 list.update_items([
                     {
                         'label': 'Item 1',
@@ -78,7 +88,7 @@ def main():
         # Dataclass items
         with ui.card().classes('w-80'):
             ui.label('Dataclass Items').classes('text-h6 q-pa-md')
-            with dui.flex_list(factory=ItemListFactory()) as list:
+            with dui.flex_list(factory=PersonListFactory(bordered=True)) as list:
                 list.update_items([
                     Person('John', 25),
                     Person('Jane', 30),
