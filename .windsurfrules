@@ -1,0 +1,119 @@
+This is a NiceGUI extension project.
+
+Apply the following rules:
+* It is a collection of components that extend the functionality of NiceGUI.
+* You run all examples and test using poetry.
+* If you modified a file in this project you do not need to run the current example again because it will be automatically reloaded.
+* You can usually track errors in the log terminal.
+
+## Project structure
+* The project dependencies are stored in the `pyproject.toml` file.
+* The project source code is stored in the `nice_droplets` folder.
+* Examples are stored in the `examples` folder.
+* Tests are stored in the `tests` folder.
+* New visual elements or files directly associated with these should be stored in the `elements` folder.
+
+## Basic rules about building apps with NiceGUI
+
+* The `ui` module is the entry point for building UIs, it contains all the basic elements.
+* THe most important layouting elements are `ui.row` and `ui.column` to create a row or column of elements.
+* `ui.grid` can be used to create a grid of elements.
+* Use the `ui.element` element to create custom elements.
+* To add views nested within a view, you need to use the with statement to enter the context of the parent view.
+    * Views created within the context of the parent view are nested within the parent view.
+    * Views created outside the context of the parent view are not nested within the parent view.    
+* To clear a view you can use an element's clear method.
+* A views style can be altered using an element's style method.
+* A views class can be altered using an element's classes method, Tailwind classes can be used here.
+* NiceGUI is based upon Quasar and Vue, so you can use all the Quasar and Vue features.
+* NiceGUI often does not implement all the features of Quasar and Vue, but you can find out which ones are missing by looking at the Quasar and Vue documentation and make use of ondocumented properties and methods.
+
+# Example app
+
+```python
+from nicegui import ui
+
+@ui.page('/')
+async def index():
+    ui.label('Hello World')
+    with ui.row() as row: # horizontal row
+        ui.label('Hello World')  # nested within the row
+        ui.label('Hello World')
+    with ui.column() as col: # vertical column
+        ui.label('Hello World')  # nested within the column
+        ui.label('Hello World')  
+    ui.label('Hello World')  # not nested within any row or column
+    ui.label('Hello World')
+    def toggle_content():
+        row.clear()
+        with row:
+            ui.label('Hello World')
+            ui.label('Hello World')
+    ui.button('Toggle content', on_click=toggle_content)
+
+ui.run()
+```
+
+# Custom components
+
+* The `ui.element` element can be used to create custom elements.
+* A new element can consist just of a Python file or a Python file and a js file. The naming scheme is `<name>.py` or `<name>.py` and `<name>.js`.
+
+## Example for a Python only component
+
+```python
+from nicegui import ui
+
+class MyElement(ui.element):
+    def __init__(self):
+        super().__init__("div")
+```
+
+## Example for a Python and JS component
+
+### Python
+
+```python
+from nicegui import ui
+
+class MyElement(ui.element, component="my_element.js"):
+    def __init__(self):
+        super().__init__()
+        self._props['message'] = "Hello World"        
+
+    def say_hello(self):
+        self.run_method('sayHello')
+        
+```
+
+### JS for Qus
+
+```js
+export default {
+    template: `
+        <div>
+            <p>{{ message }}</p>
+        </div>
+    `,
+    props: {
+        message: String
+    },
+    mounted() {
+        console.log('Mounted')
+    },
+    updated() {
+        console.log('Updated')
+    },
+    beforeUnmount() {
+        console.log('Before unmount')
+    },
+    unmounted() {
+        console.log('Unmounted')
+    }
+    methods: {
+        sayHello() {
+            console.log('Hello')
+        }
+    }
+}
+```
