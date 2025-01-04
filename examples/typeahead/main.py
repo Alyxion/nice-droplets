@@ -1,5 +1,5 @@
 from nicegui import ui
-from nice_droplets import dui
+import nice_droplets.dui as dui
 
 FRUITS = [
     'Apple', 'Apricot', 'Avocado',

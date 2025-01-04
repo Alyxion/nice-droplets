@@ -1,6 +1,5 @@
 from nicegui import ui
-from nice_droplets import dui
-import re
+import nice_droplets.dui as dui
 
 # Text Constants
 USERNAME_REQUIREMENTS_TITLE = 'Username requirements:'
@@ -79,20 +78,24 @@ async def index():
 
     # Username input with popover
     with ui.input(label='Username', on_change=lambda e: update_username_validation(e.value)):
-        with dui.popover():
+        with dui.popover() as popover:
             ui.label(USERNAME_REQUIREMENTS_TITLE).style(STYLE_TITLE)
             username_requirement_labels = {
                 key: ui.label(f'{VALIDATION_ICONS["error"]} {text}')
                 for key, text in USERNAME_REQUIREMENTS.items()
             }
+            ui.button('Close', on_click=lambda: popover.hide())
+        ui.button('Show popover', on_click=lambda: popover.show())
 
     # Password input with requirements checklist
     with ui.input(label='Password', password=True, on_change=lambda e: update_password_validation(e.value)):
-        with dui.popover():
+        with dui.popover() as popover:
             ui.label(PASSWORD_REQUIREMENTS_TITLE).style(STYLE_TITLE)
             requirement_labels = {
                 key: ui.label(f'{VALIDATION_ICONS["error"]} {text}')
                 for key, text in PASSWORD_REQUIREMENTS.items()
             }
+            ui.button('Close', on_click=lambda: popover.hide())
+        ui.button('Show popover', on_click=lambda: popover.show())
 
 ui.run(dark=False)

@@ -3,7 +3,8 @@ from typing import Any, Callable, Optional, TypeVar
 from nicegui import ui
 
 from nice_droplets.elements.item import Item
-from nice_droplets.elements.itemlist import ItemList
+from nice_droplets.elements.list import List
+from nice_droplets.elements.item_section import ItemSection
 
 T = TypeVar('T')
 
@@ -119,10 +120,9 @@ class DefaultFactory(FlexListFactory):
         )
         with item:
             ui.label(label).classes('w-full text-left')
-            
-        index = len(self._item_elements)
-        item.on('click', lambda _, i=index: self._click_handler and self._click_handler(i))
-            
+
+            index = self._index
+            item.on('click', lambda _, i=index: self._click_handler and self._click_handler(i))
         return item
 
     def _select_item(self, item: ui.element) -> None:
@@ -141,7 +141,7 @@ class ItemListFactory(FlexListFactory):
         self._padding = padding
             
     def create_container(self) -> ui.element:
-        self._container = ItemList(
+        self._container = List(
             bordered=self._bordered,
             separator=self._separator,
             padding=self._padding
@@ -161,7 +161,6 @@ class ItemListFactory(FlexListFactory):
             avatar_square = data.get('avatar_square', False)
             avatar_rounded = data.get('avatar_rounded', False)
             stamp = data.get('stamp', None)
-                
         else:
             title = str(data)
             subtitle = ''
@@ -180,9 +179,8 @@ class ItemListFactory(FlexListFactory):
         # Add icon or avatar if provided
         if icon or avatar:
             with item:
-                section = item.add_section(avatar=True)
-                if icon:
-                    with section:
+                with ItemSection(avatar=True) as section:
+                    if icon:
                         ui.avatar(
                             icon=icon,
                             color=avatar_color,
@@ -190,8 +188,7 @@ class ItemListFactory(FlexListFactory):
                             square=avatar_square,
                             rounded=avatar_rounded
                         )
-                elif avatar:
-                    with section:
+                    elif avatar:
                         with ui.avatar(
                             color=avatar_color,
                             text_color=avatar_text_color,
@@ -202,21 +199,19 @@ class ItemListFactory(FlexListFactory):
                 
         # Add main content section
         with item:
-            section = item.add_section(
+            with ItemSection(
                 overline=overline if overline else None,
                 label=title,
                 caption=subtitle if subtitle else None
-            )
+            ):
+                pass
                     
         # Add timestamp if provided
         if stamp:
             with item:
-                with item.add_section(side=True) as section:
+                with ItemSection(side=True) as section:
                     section.classes('items-end')
                     ui.label(stamp).classes('text-caption')
-                    
-        index = len(self._item_elements)
-        item.on('click', lambda _, i=index: self._click_handler and self._click_handler(i))
                     
         self._container.add(item)
         return item
@@ -265,7 +260,6 @@ class TableItemFactory(FlexListFactory):
         # Extract columns from the first item
         sample_item = items[0]
         if isinstance(sample_item, dict):
-            # Filter out special keys
             columns = [
                 {'name': key, 'label': key.title(), 'field': key}
                 for key in sample_item.keys()
@@ -291,14 +285,7 @@ class TableItemFactory(FlexListFactory):
             if self._click_handler:
                 def on_row_click(e: Any) -> None:
                     row_index = e.args.get('row', {}).get('index', -1)
-                    if row_index >= 0:
+                    if row_index >= 0 and not self._is_item_disabled(self._items[row_index]):
                         self._click_handler(row_index)
                 
                 self._container.on('row-click', on_row_click)
-
-    def _handle_table_select(self, e: Any) -> None:
-        """Handle table selection event"""
-        if e.args.get('selected', None):
-            self.index = e.args['selected'][0]
-        else:
-            self.index = -1
