@@ -42,17 +42,17 @@ class FlexListFactory:
     
     def _handle_index_changed(self) -> None:
         """Called when the current index changes"""
-        if 0 <= self._previous_index < len(self._item_elements):
-            self._deselect_item(self._item_elements[self._previous_index])
-        if 0 <= self._index < len(self._item_elements):
-            self._select_item(self._item_elements[self._index])
+        if 0 <= self._previous_index < len(self._items):
+            self.deselect_item(self._previous_index)
+        if 0 <= self._index < len(self._items):
+            self.select_item(self._index)
 
-    def _select_item(self, item: ui.element) -> None:
-        """Apply selection styling to an item"""
+    def select_item(self, index: int) -> None:
+        """Apply selection styling to an item at the given index"""
         raise NotImplementedError()
     
-    def _deselect_item(self, item: ui.element) -> None:
-        """Remove selection styling from an item"""
+    def deselect_item(self, index: int) -> None:
+        """Remove selection styling from an item at the given index"""
         raise NotImplementedError()
 
     def is_item_disabled(self, item: Any) -> bool:
@@ -63,20 +63,22 @@ class FlexListFactory:
             return bool(item.disabled)
         return False
 
-    def enable_item(self, item: ui.element) -> None:
-        item.classes('cursor-pointer hover:bg-gray-100', 
-                    remove='cursor-not-allowed opacity-50')
+    def enable_item(self, index: int) -> None:
+        if 0 <= index < len(self._item_elements):
+            self._item_elements[index].classes('cursor-pointer hover:bg-gray-100', 
+                                              remove='cursor-not-allowed opacity-50')
     
-    def disable_item(self, item: ui.element) -> None:
-        item.classes('cursor-not-allowed opacity-50', 
-                    remove='cursor-pointer hover:bg-gray-100')
+    def disable_item(self, index: int) -> None:
+        if 0 <= index < len(self._item_elements):
+            self._item_elements[index].classes('cursor-not-allowed opacity-50', 
+                                              remove='cursor-pointer hover:bg-gray-100')
 
-    def _update_item_state(self, item: ui.element, data: Any) -> None:
+    def _update_item_state(self, index: int, data: Any) -> None:
         """Update item's visual state based on its disabled status"""
         if self.is_item_disabled(data):
-            self.disable_item(item)
+            self.disable_item(index)
         else:
-            self.enable_item(item)
+            self.enable_item(index)
 
     def clear(self) -> None:
         """Clear all items"""
@@ -93,7 +95,7 @@ class FlexListFactory:
         else:
             index = element
         element = self._item_elements[index] if index < len(self._item_elements) else None        
-        item = self._items[index] if index < len(self._items) else None
+        item = self._items[index] if index < len(self._items) else None        
         for handler in self._click_handler:
             handle_event(handler, FlexFactoryItemClickedArguments(sender=self, element=element, index=index, item=item))
 
@@ -105,7 +107,7 @@ class FlexListFactory:
             with self._container:
                 for i, item_data in enumerate(items):
                     item_element = self.create_item(item_data)
-                    self._update_item_state(item_element, item_data)
+                    self._update_item_state(i, item_data)
                     self._item_elements.append(item_element)
 
 
@@ -128,11 +130,15 @@ class DefaultFactory(FlexListFactory):
             item.on('click', lambda _: self.handle_item_click(item))
         return item
 
-    def _select_item(self, item: ui.element) -> None:
-        item.classes('bg-primary text-white', remove='hover:bg-gray-100')
+    def select_item(self, index: int) -> None:
+        """Apply selection styling to an item at the given index"""
+        if 0 <= index < len(self._item_elements):
+            self._item_elements[index].classes('bg-primary text-white', remove='hover:bg-gray-100')
     
-    def _deselect_item(self, item: ui.element) -> None:
-        item.classes('hover:bg-gray-100', remove='bg-primary text-white')
+    def deselect_item(self, index: int) -> None:
+        """Remove selection styling from an item at the given index"""
+        if 0 <= index < len(self._item_elements):
+            self._item_elements[index].classes('hover:bg-gray-100', remove='bg-primary text-white')
 
 
 class ItemListFactory(FlexListFactory):
@@ -204,21 +210,25 @@ class ItemListFactory(FlexListFactory):
                     
         return item
 
-    def select_item(self, item: ui.element) -> None:
-        """Apply selection styling to an item"""
-        item.props(add_active=True)
+    def select_item(self, index: int) -> None:
+        """Apply selection styling to an item at the given index"""
+        if 0 <= index < len(self._item_elements):
+            self._item_elements[index].props(add_active=True)
 
-    def deselect_item(self, item: ui.element) -> None:
-        """Remove selection styling from an item"""
-        item.props(remove_active=True)
+    def deselect_item(self, index: int) -> None:
+        """Remove selection styling from an item at the given index"""
+        if 0 <= index < len(self._item_elements):
+            self._item_elements[index].props(remove_active=True)
 
-    def disable_item(self, item: ui.element) -> None:
-        """Apply disabled styling to an item"""
-        item.classes(add='disabled')
+    def disable_item(self, index: int) -> None:
+        """Apply disabled styling to an item at the given index"""
+        if 0 <= index < len(self._item_elements):
+            self._item_elements[index].classes(add='disabled')
 
-    def enable_item(self, item: ui.element) -> None:
-        """Remove disabled styling from an item"""
-        item.classes(remove='disabled')
+    def enable_item(self, index: int) -> None:
+        """Remove disabled styling from an item at the given index"""
+        if 0 <= index < len(self._item_elements):
+            self._item_elements[index].classes(remove='disabled')
 
 
 class TableItemFactory(FlexListFactory):
@@ -234,11 +244,14 @@ class TableItemFactory(FlexListFactory):
         # Items are handled in update_items
         return None
 
-    def _select_item(self, item: ui.element) -> None:
+    def select_item(self, index: int) -> None:
         if self._table:
-            self._table.selected = [self._index]
+            if self._index < 0:
+                self._table.selected = []
+            else:
+                self._table.selected = [self._items[self._index]]
     
-    def _deselect_item(self, item: ui.element) -> None:
+    def deselect_item(self, index: int) -> None:
         if self._table:
             self._table.selected = []
             
