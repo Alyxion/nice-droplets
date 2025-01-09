@@ -18,8 +18,6 @@ class SearchTask(Task):
     altenatively either the execute or execute_async method can be overridden to perform the search asynchronously.
     """
 
-    is_async: bool = False
-
     def __init__(
         self,
         search_fn: (Callable[[str], list[Any]] | Callable[[str], Awaitable[list[Any]]] | None) = None,
@@ -74,24 +72,30 @@ class SearchTask(Task):
     def execute(self):
         """Execute the search if not cancelled.
 
+        Overwrite with custom sync search logic if needed.
+
         :return: A list of search results.
         """
         if self.is_async:
             raise NotImplementedError("Use execute_async for async search functions")
-        # check if first callback arg is SearchParameters via inspect
-        result = self._search_fn(self._query)  # type: ignore
-        self._total_elements = len(result)
-        self.set_elements(result)        
+        if self._search_fn and self._query is not None:
+            result = self._search_fn(self._query)  # type: ignore
+            self._total_elements = len(result)
+            self.set_elements(result)
 
     async def execute_async(self):
         """Execute the search asynchronously if not cancelled.
+
+        Overwrite with custom async search logic if needed.
 
         :return: A list of search results.
         """
         if not self.is_async:
             raise NotImplementedError("Use execute for sync search functions")
-        self._elements = await self._search_fn(self._query)  # type: ignore
-        self._total_elements = len(self._elements)
+        if self._search_fn and self._query is not None:
+            result = await self._search_fn(self._query)  # type: ignore
+            self._total_elements = len(result)
+            self.set_elements(result)
 
     @property
     def elements(self) -> list[Any]:
@@ -122,12 +126,10 @@ class SearchTask(Task):
     @property
     def is_async(self) -> bool:
         """Check if the search function is executed asynchronously."""
-        if self.execute != SearchTask.execute:
+
+        # check if the execute function were overridden
+        if self.execute.__func__ != SearchTask.execute:
             return False
-        elif self.execute_async != SearchTask.execute_async:
+        if self.execute_async.__func__ != SearchTask.execute_async:
             return True
-        return (
-            asyncio.iscoroutinefunction(self._search_fn)
-            if self._search_fn
-            else super().is_async
-        )
+        return self._search_fn is not None and asyncio.iscoroutinefunction(self._search_fn)

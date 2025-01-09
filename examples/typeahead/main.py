@@ -33,7 +33,7 @@ def index():
     # Simple fruit search
     with ui.input(label='Search fruits', placeholder='Type to search...') as fruit_input:
         with dui.typeahead(
-            on_search=search_fruits_filter,
+            on_search=lambda query: dui.search_task(search_fruits_filter, query),
             min_chars=1,
             on_select=lambda fruit: fruit_input.set_value(fruit)
         ):

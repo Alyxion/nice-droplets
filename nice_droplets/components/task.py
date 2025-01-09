@@ -56,8 +56,13 @@ class Task:
     @property
     def is_async(self) -> bool:
         """Check if the task is executed asynchronously."""
-        # Override this for custom implementations of other tasks supporting both synchronous and asynchronous execution.
-        return self.run_async != Task.run_async
+        # Check if execute_async was overridden by comparing function objects
+        if self.execute_async.__func__ != Task.execute_async:
+            return True
+        # Check if execute was overridden by comparing function objects
+        if self.execute.__func__ != Task.execute:
+            return False
+        return False
     
     def run(self) -> None:
         """Run the task and store its result or error."""

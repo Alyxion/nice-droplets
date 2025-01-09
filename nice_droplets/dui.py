@@ -1,4 +1,5 @@
 import nice_droplets.components
+from .components.search_task import SearchTask as search_task
 from .elements.item import Item as item
 from .elements.item_section import ItemSection as item_section
 from .elements.item_label import ItemLabel as item_label
@@ -16,4 +17,5 @@ __all__ = [
     "popover",
     "typeahead",
     "flex_list",
+    "search_task",
 ]
