@@ -26,8 +26,7 @@ class Popover(Element, component='popover.js'):
                  docking_side: str = 'bottom left',
                  ):
         # get current context element
-        with ui.teleport('body'):
-            super().__init__()
+        super().__init__()
         if default_style:
             self.classes('bg-white dark:!bg-gray-800').style(self.POPOVER_DEFAULT_STYLE)
         self._props['showEvents'] = show_events or ['focus']

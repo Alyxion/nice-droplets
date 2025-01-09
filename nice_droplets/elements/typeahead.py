@@ -54,6 +54,9 @@ class Typeahead(Popover):
             'showSuggestions': {
                 'key': ' ',
                 'ctrlKey': True
+            },
+            'cancel': {
+                'key': 'Escape'
             }
         })
 
@@ -86,13 +89,17 @@ class Typeahead(Popover):
 
     async def _handle_key(self, e: GenericEventArguments) -> None:
         """Handle keyboard events."""
-        if self._hot_key_handler.verify('showSuggestions', e):
-            self.show_at(e.sender)
-            return
-            
         if e.sender != self._current_target:
             return
             
+        if self._hot_key_handler.verify('showSuggestions', e):
+            self.show_at(e.sender)
+            return
+
+        if self._hot_key_handler.verify('cancel', e):
+            self.hide()
+            return
+
         if self._search_list._handle_key(e):
             pass
 
