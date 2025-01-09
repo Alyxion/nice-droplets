@@ -8,13 +8,22 @@ from nice_droplets.events import FlexFactoryItemClickedArguments
 T = TypeVar('T')
 
 class FlexListFactory:
-    def __init__(self, *, on_item_click: Optional[Callable[[FlexFactoryItemClickedArguments], None]] = None):
+    def __init__(self, *, 
+                 on_item_click: Optional[Callable[[FlexFactoryItemClickedArguments], None]] = None,
+                 to_string: Optional[Callable[[Any], str]] = None):
+        """Initialize the list factory.
+        
+        :param on_item_click: Optional callback for handling item clicks
+        :param to_string: Optional callback function that converts a selected item to a string.
+                       If not provided, str() will be used on the item.
+        """
         self._index = -1
         self._previous_index = -1
         self._container: Optional[ui.element] = None
         self._items: list[Any] = []
         self._item_elements: list[ui.element] = []
         self._click_handler: list[Callable[[FlexFactoryItemClickedArguments], None]] = [on_item_click] if on_item_click else []
+        self._to_string = to_string or str
         
     def create_container(self) -> ui.element:
         """Create and return the container element"""
@@ -86,11 +95,16 @@ class FlexListFactory:
         self._index = -1
         self._previous_index = -1
 
+    def get_item_string(self, item: Any) -> str:
+        """Convert an item to its string representation using the to_string callback."""
+        return self._to_string(item)
+
     def handle_item_click(self, element: int | ui.element) -> None:
         if isinstance(element, ui.element):
             index = self._item_elements.index(element)
         else:
             index = element
+
         element = self._item_elements[index] if index < len(self._item_elements) else None        
         item = self._items[index] if index < len(self._items) else None        
         for handler in self._click_handler:

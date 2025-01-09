@@ -129,7 +129,7 @@ class Typeahead(Popover):
         """Handle when a suggestion item is selected."""
         if not self._current_target:
             return
-        value = e.item
+        value = self._search_list._view_factory._to_string(e.item) if e.item else ''
         if isinstance(value, str):
             self._selected_value = value
             self._current_target.set_value(value)

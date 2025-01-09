@@ -43,11 +43,13 @@ def index():
     
     # Product search with table view factory
     with ui.input(label='Search products', placeholder='Type to search...') as product_input:
+        # Define how to convert a selected product to a string
         with dui.typeahead(
             on_search=create_search_task,
             min_chars=1,
-            on_select=lambda product: product_input.set_value(product['name']),
-            factory=FlexTableFactory()
+            # Convert the selected product to string using the same function
+            on_select=lambda product: product_input.set_value(product_to_string(product)),
+            factory=FlexTableFactory(value_column='name')  # Using keyword argument from base class
         ) as typeahead:
             pass
 

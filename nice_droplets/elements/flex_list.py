@@ -30,9 +30,9 @@ class FlexList(ui.element):
         self._content_update_handlers = [on_content_update] if on_content_update else []
         self._select_handlers = [on_select] if on_select else []
         self._items: list[Any] = items or []
-        self._view = factory or FlexDefaultFactory()
-        self._view.on_click(self._handle_item_click)
-        self._container = self._view.create_container()
+        self._view_factory = factory or FlexDefaultFactory()
+        self._view_factory.on_click(self._handle_item_click)
+        self._container = self._view_factory.create_container()
         self._props['container_id'] = self._container.id
         
         self._hot_key_handler = HotKeyHandler({
@@ -97,7 +97,7 @@ class FlexList(ui.element):
         if not self._items:
             return
             
-        new_index = self._view.index + delta
+        new_index = self._view_factory.index + delta
         if new_index < 0:
             new_index = len(self._items) - 1
         elif new_index >= len(self._items):
@@ -107,13 +107,13 @@ class FlexList(ui.element):
 
     def _update_selection(self, new_index: int) -> None:
         """Update the current selection to the specified index."""
-        self._view.index = new_index
+        self._view_factory.index = new_index
 
     def _confirm_current(self) -> None:
         """Select the currently highlighted item."""
-        if 0 <= self._view.index < len(self._items):
-            element = self._view._item_elements[self._view.index] if self._view._item_elements else None
-            self._handle_item_click(FlexFactoryItemClickedArguments(sender=self, item=self._items[self._view.index], index=self._view.index, element=element))
+        if 0 <= self._view_factory.index < len(self._items):
+            element = self._view_factory._item_elements[self._view_factory.index] if self._view_factory._item_elements else None
+            self._handle_item_click(FlexFactoryItemClickedArguments(sender=self, item=self._items[self._view_factory.index], index=self._view_factory.index, element=element))
 
     def _handle_item_click(self, e: FlexFactoryItemClickedArguments) -> None:
         """Handle item click events."""
@@ -124,18 +124,18 @@ class FlexList(ui.element):
         """Update the list of items"""
         self._items = items
         self._current_index = -1
-        self._view.update_items(items)
+        self._view_factory.update_items(items)
         for handler in self._content_update_handlers:
             handle_event(handler, SearchListContentUpdateEventArguments(sender=self, client=self.client, items=items))
 
     def clear_selection(self) -> None:
         """Clear the current selection."""
-        self._view.index = -1
+        self._view_factory.index = -1
 
     def clear(self) -> None:
         """Clear all items"""
         self._items = []
         self._current_index = -1
-        self._view.update_items([])        
+        self._view_factory.update_items([])        
         for handler in self._content_update_handlers:
             handle_event(handler, SearchListContentUpdateEventArguments(sender=self, client=self.client, items=[]))
