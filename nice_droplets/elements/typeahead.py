@@ -9,6 +9,7 @@ from nice_droplets.elements.search_list import SearchList
 from nice_droplets.components import EventHandlerTracker, SearchTask
 from nice_droplets.components.hot_key_handler import HotKeyHandler
 from nice_droplets.events import SearchListContentUpdateEventArguments
+from nice_droplets.factories import FlexListFactory
 
 
 class Typeahead(Popover):
@@ -24,7 +25,8 @@ class Typeahead(Popover):
                  min_chars: int = 1,
                  debounce: int = 0.1,
                  on_select: Callable[[Any], None] | None = None,
-                 observe_parent: bool = True,                 
+                 observe_parent: bool = True,     
+                 factory: FlexListFactory | None = None            
                  ):
         """Initialize the typeahead component.
         
@@ -33,23 +35,28 @@ class Typeahead(Popover):
         :param debounce: Time to wait before executing a search after input changes.
         :param on_select: Function to call when an item is selected.
         :param observe_parent: Whether to observe the parent element for focus events.
+        :param factory: The factory to use for creating the flex list.
         """
         super().__init__(
             show_events=['focus', 'input'],
             hide_events=['blur'],
             docking_side='bottom left',
             observe_parent=False,
-            default_style=True
+            default_style=True,            
         )
         self.keep_hidden = True
         self._current_target: ValueElement | None = None
         self._event_helper: EventHandlerTracker | None = None
         self._min_chars = min_chars
+        self._selected_value = None
         
         self._hot_key_handler = HotKeyHandler({
             'showSuggestions': {
                 'key': ' ',
                 'ctrlKey': True
+            },
+            'cancel': {
+                'key': 'Escape'
             }
         })
 
@@ -59,7 +66,8 @@ class Typeahead(Popover):
                 min_chars=min_chars,
                 debounce=debounce,
                 on_select=lambda item: self._handle_item_select(item),
-                on_content_update=self._handle_content_update
+                on_content_update=self._handle_content_update,
+                factory=factory
             )
 
         if observe_parent:
@@ -81,14 +89,18 @@ class Typeahead(Popover):
 
     async def _handle_key(self, e: GenericEventArguments) -> None:
         """Handle keyboard events."""
-        if self._hot_key_handler.verify('showSuggestions', e):
-            self.show_at(e.sender)
-            return
-            
         if e.sender != self._current_target:
             return
             
-        if self._search_list.handle_key(e):
+        if self._hot_key_handler.verify('showSuggestions', e):
+            self.show_at(e.sender)
+            return
+
+        if self._hot_key_handler.verify('cancel', e):
+            self.hide()
+            return
+
+        if self._search_list._handle_key(e):
             pass
 
     def _handle_show(self, e: GenericEventArguments) -> None:
@@ -99,6 +111,7 @@ class Typeahead(Popover):
         self._remove_current_target()
         self._current_target = self._targets.get(e.args['target'], None)
         self._event_helper = EventHandlerTracker(self._current_target)
+        self._search_list.set_search_query(self._current_target.value)
 
     def _remove_current_target(self) -> None:
         if self._current_target:
@@ -114,15 +127,22 @@ class Typeahead(Popover):
         """Handle input value changes."""
         if e.sender != self._current_target:
             return
-        self._search_list.handle_input_change(e)
+        if self._selected_value == e.value:  # catch once
+            self._selected_value = None
+            return
+        self._search_list.set_search_query(e.value if e.value else '')
 
-    def _handle_item_select(self, item: Any) -> None:
+    def _handle_item_select(self, e: Any) -> None:
         """Handle when a suggestion item is selected."""
         if not self._current_target:
             return
-        self._current_target.set_value(item)
+        value = self._search_list._view_factory._to_string(e.item) if e.item else ''
+        if isinstance(value, str):
+            self._selected_value = value
+            self._current_target.set_value(value)
+            self._search_list.set_search_query('')
         self.hide()
 
     def _handle_content_update(self, e: SearchListContentUpdateEventArguments) -> None:
         """Handle when the search list content is updated."""
-        self.keep_hidden = len(self._search_list.items) == 0
+        self.keep_hidden = len(self._search_list.items) == 0 or not self._current_target

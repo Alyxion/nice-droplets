@@ -18,8 +18,6 @@ class SearchTask(Task):
     altenatively either the execute or execute_async method can be overridden to perform the search asynchronously.
     """
 
-    is_async: bool = False
-
     def __init__(
         self,
         search_fn: (Callable[[str], list[Any]] | Callable[[str], Awaitable[list[Any]]] | None) = None,
@@ -39,6 +37,7 @@ class SearchTask(Task):
         :param first_element_index: The index of the first element to return from the search function.
         """
         super().__init__()
+        self.max_elements = max_elements
         self._data_lock = RLock()
         self._query: str | None = query
         self._elements: list[Any] = []
@@ -58,7 +57,7 @@ class SearchTask(Task):
                     self._elements.extend(elements[:remaining_space])
                     if len(elements) > remaining_space:
                         self._more_elements = True
-                else:
+                else:                    
                     self._more_elements = True
 
     def set_elements(self, elements: list[Any]):
@@ -73,23 +72,30 @@ class SearchTask(Task):
     def execute(self):
         """Execute the search if not cancelled.
 
+        Overwrite with custom sync search logic if needed.
+
         :return: A list of search results.
         """
         if self.is_async:
             raise NotImplementedError("Use execute_async for async search functions")
-        # check if first callback arg is SearchParameters via inspect
-        self._elements = self._search_fn(self._query)  # type: ignore
-        self._total_elements = len(self._elements)
+        if self._search_fn and self._query is not None:
+            result = self._search_fn(self._query)  # type: ignore
+            self._total_elements = len(result)
+            self.set_elements(result)
 
     async def execute_async(self):
         """Execute the search asynchronously if not cancelled.
+
+        Overwrite with custom async search logic if needed.
 
         :return: A list of search results.
         """
         if not self.is_async:
             raise NotImplementedError("Use execute for sync search functions")
-        self._elements = await self._search_fn(self._query)  # type: ignore
-        self._total_elements = len(self._elements)
+        if self._search_fn and self._query is not None:
+            result = await self._search_fn(self._query)  # type: ignore
+            self._total_elements = len(result)
+            self.set_elements(result)
 
     @property
     def elements(self) -> list[Any]:
@@ -109,20 +115,21 @@ class SearchTask(Task):
         return self._first_element_index
 
     @property
-    def count(self) -> int:
-        """Get the number of actual elements returned."""
-        return self._count
-
-    @property
     def total_elements(self) -> int:
         """Get the total number of elements (available in the source such as a database but not necessarily returned)."""
         return self._total_elements
 
+    @total_elements.setter
+    def total_elements(self, value: int):
+        self._total_elements = value
+
     @property
     def is_async(self) -> bool:
         """Check if the search function is executed asynchronously."""
-        return (
-            asyncio.iscoroutinefunction(self._search_fn)
-            if self._search_fn
-            else super().is_async
-        )
+
+        # check if the execute function were overridden
+        if self.execute.__func__ != SearchTask.execute:
+            return False
+        if self.execute_async.__func__ != SearchTask.execute_async:
+            return True
+        return self._search_fn is not None and asyncio.iscoroutinefunction(self._search_fn)
