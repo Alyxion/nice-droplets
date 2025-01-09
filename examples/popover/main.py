@@ -1,3 +1,5 @@
+import re
+
 from nicegui import ui
 import nice_droplets.dui as dui
 
@@ -69,13 +71,6 @@ async def index():
             icon = VALIDATION_ICONS['success'] if is_met else VALIDATION_ICONS['error']
             requirement_labels[req].text = f'{icon} {PASSWORD_REQUIREMENTS[req]}'
 
-    # button to toggle dark and bright mode
-    dark = ui.dark_mode(True)
-    with ui.row():
-        def toggle_dark_mode():
-            dark.toggle()
-        ui.button('Toggle dark mode', on_click=toggle_dark_mode)
-
     # Username input with popover
     with ui.input(label='Username', on_change=lambda e: update_username_validation(e.value)):
         with dui.popover() as popover:
@@ -84,8 +79,6 @@ async def index():
                 key: ui.label(f'{VALIDATION_ICONS["error"]} {text}')
                 for key, text in USERNAME_REQUIREMENTS.items()
             }
-            ui.button('Close', on_click=lambda: popover.hide())
-        ui.button('Show popover', on_click=lambda: popover.show())
 
     # Password input with requirements checklist
     with ui.input(label='Password', password=True, on_change=lambda e: update_password_validation(e.value)):
@@ -95,7 +88,5 @@ async def index():
                 key: ui.label(f'{VALIDATION_ICONS["error"]} {text}')
                 for key, text in PASSWORD_REQUIREMENTS.items()
             }
-            ui.button('Close', on_click=lambda: popover.hide())
-        ui.button('Show popover', on_click=lambda: popover.show())
 
-ui.run(dark=False)
+ui.run()

@@ -5,25 +5,32 @@ from nicegui import ui
 from nicegui.events import UiEventArguments, Handler, handle_event, GenericEventArguments
 from nicegui.dataclasses import KWONLY_SLOTS
 
-from nice_droplets.elements.flex_list_factory import FlexListFactory, DefaultFactory
+from nice_droplets.factories import FlexListFactory, FlexDefaultFactory
 from nice_droplets.components.hot_key_handler import HotKeyHandler
 from nice_droplets.events import SearchListContentUpdateEventArguments, FlexListItemClickedArguments, FlexFactoryItemClickedArguments
 
 
-class FlexList(ui.element):
-    """Base list component showing selectable items with keyboard navigation"""
-
+class FlexList(ui.element):    
     def __init__(self, *, 
                  items: Optional[list[Any]] = None,
                  factory: Optional[FlexListFactory] = None,
                  on_content_update: Handler[SearchListContentUpdateEventArguments] | None = None,
                  on_select: Handler[FlexListItemClickedArguments] | None = None,
                  ):
+        """FlexList
+
+        The FlexList component displays a list of items using a flexible item factory.
+
+        :param items: List of items to display.
+        :param factory: Factory to use for creating the flex views.
+        :param on_content_update: Handler for content update events.
+        :param on_select: Handler for select events.
+        """
         super().__init__()
         self._content_update_handlers = [on_content_update] if on_content_update else []
         self._select_handlers = [on_select] if on_select else []
         self._items: list[Any] = items or []
-        self._view = factory or DefaultFactory()
+        self._view = factory or FlexDefaultFactory()
         self._view.on_click(self._handle_item_click)
         self._container = self._view.create_container()
         self._props['container_id'] = self._container.id

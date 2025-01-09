@@ -9,7 +9,7 @@ from nice_droplets.elements.search_list import SearchList
 from nice_droplets.components import EventHandlerTracker, SearchTask
 from nice_droplets.components.hot_key_handler import HotKeyHandler
 from nice_droplets.events import SearchListContentUpdateEventArguments
-from nice_droplets.elements.flex_list import FlexListFactory
+from nice_droplets.factories import FlexListFactory
 
 
 class Typeahead(Popover):

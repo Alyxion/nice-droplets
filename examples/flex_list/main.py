@@ -3,9 +3,8 @@ from datetime import datetime
 
 from nicegui import ui
 
-from nice_droplets import dui, events
-from nice_droplets.elements.flex_list_factory import DefaultFactory, ItemListFactory, TableItemFactory
-
+from nice_droplets import dui
+from nice_droplets.factories import FlexItemListFactory, FlexDefaultFactory, FlexTableFactory
 
 @dataclass
 class Person:
@@ -26,7 +25,7 @@ class Project:
             'priority': self.priority
         }
 
-class PersonListFactory(ItemListFactory):
+class PersonListFactory(FlexItemListFactory):
     def setup_item(self, item, data) -> ui.element:
         with item:  # add item section, avatar and text content
             with dui.item_section(avatar=True):
@@ -43,7 +42,7 @@ def main():
         # Simple items
         with ui.card().classes('w-80'):
             ui.label('Simple Items').classes('text-h6 q-pa-md')
-            with dui.flex_list(factory=DefaultFactory()) as list:
+            with dui.flex_list(factory=FlexDefaultFactory()) as list:
                 list.update_items([
                     'Item 1',
                     'Item 2',
@@ -60,7 +59,7 @@ def main():
         # Rich items
         with ui.card().classes('w-80'):
             ui.label('Rich Items').classes('text-h6 q-pa-md')
-            with dui.flex_list(factory=ItemListFactory(bordered=True, separator=True, padding=True)) as list:
+            with dui.flex_list(factory=FlexItemListFactory(bordered=True, separator=True, padding=True)) as list:
                 list.update_items([
                     {
                         'label': 'Item 1',
@@ -104,7 +103,7 @@ def main():
         # Table items
         with ui.card().classes('w-80'):
             ui.label('Table Items').classes('text-h6 q-pa-md')
-            with dui.flex_list(factory=TableItemFactory()) as list:
+            with dui.flex_list(factory=FlexTableFactory()) as list:
                 projects = [
                     Project('Project 1', 'In Progress', 'High'),
                     Project('Project 2', 'Done', 'Medium'),

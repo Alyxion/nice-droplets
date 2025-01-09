@@ -1,6 +1,6 @@
 from nicegui import ui
 import nice_droplets.dui as dui
-from nice_droplets.elements.flex_list_factory import TableItemFactory
+from nice_droplets.factories import FlexTableFactory
 from nice_droplets.components.search_task import SearchTask
 
 
@@ -38,8 +38,6 @@ class TableSearchTask(SearchTask):
 def index():
     ui.markdown('## Product Search with Table View').classes('text-h5 mt-4 mb-2')
     
-    table_factory = TableItemFactory()
-
     def create_search_task(query: str) -> TableSearchTask:
         return TableSearchTask(products, query)
     
@@ -49,7 +47,7 @@ def index():
             on_search=create_search_task,
             min_chars=1,
             on_select=lambda product: product_input.set_value(product['name']),
-            factory=table_factory
+            factory=FlexTableFactory()
         ) as typeahead:
             pass
 
