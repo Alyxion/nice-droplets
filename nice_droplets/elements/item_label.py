@@ -1,37 +1,39 @@
-from typing import Optional
+from typing import Optional, TypedDict
 
 from nicegui import ui
+from typing_extensions import NotRequired
 from nicegui.elements.mixins.text_element import TextElement
-from pathlib import Path
 
 
-class ItemLabel(TextElement, component=str(Path(__file__).parent / 'item_label.js')):
-    def __init__(
-        self,
-        text: str = '',
-        *,
-        caption: bool = False,
-        header: bool = False,
-        overline: bool = False,
-        lines: Optional[int] = None
-    ) -> None:
-        """Create a Quasar item label element.
+class ItemLabelKwargs(TypedDict):
+    caption: NotRequired[bool]
+    header: NotRequired[bool]
+    overline: NotRequired[bool]
+    lines: NotRequired[Optional[int]]
 
-        Args:
-            text: The text content of the label
-            caption: If True, creates a caption label (smaller, lighter text)
-            header: If True, creates a header label (bolder, larger text)
-            overline: If True, creates an overline label (uppercase, small text)
-            lines: Number of lines to show before truncating (only works with caption)
+
+class ItemLabel(TextElement):
+    _ITEM_LABEL_PROPS = {
+        'caption': 'caption',
+        'header': 'header',
+        'overline': 'overline',
+        'lines': 'lines'
+    }
+
+    def __init__(self, text: str, **kwargs: ItemLabelKwargs) -> None:
+        """List Item Label
+
+        Creates an item label based on Quasar's `QItemLabel <https://quasar.dev/vue-components/list-and-list-items#qitemlabel-api>`_ component.
+
+        :param text: text to be displayed
+        :param kwargs: Additional keyword arguments:
+            - caption (bool): creates a caption label (smaller, lighter text)
+            - header (bool): creates a header label (bolder, larger text)
+            - overline (bool): creates an overline label (uppercase, small text)
+            - lines (Optional[int]): number of lines to show before truncating (only works with caption)
         """
-        super().__init__(text=text)
-        
-        if caption:
-            self.classes('q-item-label--caption')
-        elif header:
-            self.classes('q-item-label--header')
-        elif overline:
-            self.classes('q-item-label--overline')
-            
-        if lines is not None:
-            self._props['lines'] = lines
+        super().__init__(tag='q-item-label', text=text)
+
+        for py_prop, vue_prop in self._ITEM_LABEL_PROPS.items():
+            if py_prop in kwargs:
+                self._props[vue_prop] = kwargs[py_prop]

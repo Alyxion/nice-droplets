@@ -2,7 +2,6 @@ from nicegui import ui
 
 import nice_droplets.dui as dui
 
-
 @ui.page('/')
 def main():
     with ui.element('div').classes('q-pa-md w-[350px]'):
