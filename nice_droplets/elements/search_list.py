@@ -36,12 +36,12 @@ class SearchList(FlexList, SearchResultHandler):
             poll_interval=poll_interval
         )
 
-    def handle_input_change(self, e: ValueChangeEventArguments) -> None:
+    def set_search_query(self, query: str) -> None:
         """Handle input changes"""
-        value = str(e.value or '')
-        if len(value) < self._search_manager._min_chars:
+        if len(query) < self._search_manager._min_chars:
+            self.items = []
             return
-        self._search_manager.handle_search(value)
+        self._search_manager.handle_search(query)
 
     def on_search_started(self) -> None:
         """Called when a search is started."""

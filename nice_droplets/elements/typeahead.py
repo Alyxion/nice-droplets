@@ -104,6 +104,7 @@ class Typeahead(Popover):
         self._remove_current_target()
         self._current_target = self._targets.get(e.args['target'], None)
         self._event_helper = EventHandlerTracker(self._current_target)
+        self._search_list.set_search_query(self._current_target.value)
 
     def _remove_current_target(self) -> None:
         if self._current_target:
@@ -122,7 +123,7 @@ class Typeahead(Popover):
         if self._selected_value == e.value:  # catch once
             self._selected_value = None
             return
-        self._search_list.handle_input_change(e)
+        self._search_list.set_search_query(e.value if e.value else '')
 
     def _handle_item_select(self, e: Any) -> None:
         """Handle when a suggestion item is selected."""
@@ -132,6 +133,7 @@ class Typeahead(Popover):
         if isinstance(value, str):
             self._selected_value = value
             self._current_target.set_value(value)
+            self._search_list.set_search_query('')
         self.hide()
 
     def _handle_content_update(self, e: SearchListContentUpdateEventArguments) -> None:
