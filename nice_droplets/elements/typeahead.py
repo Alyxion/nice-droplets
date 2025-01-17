@@ -24,7 +24,7 @@ class Typeahead(Popover):
                  on_search: Callable[[str], SearchTask] | None = None,
                  min_chars: int = 1,
                  debounce: int = 0.1,
-                 on_select: Callable[[Any], None] | None = None,
+                 on_click: Callable[[Any], None] | None = None,
                  observe_parent: bool = True,     
                  factory: FlexListFactory | None = None            
                  ):
@@ -33,7 +33,7 @@ class Typeahead(Popover):
         :param on_search: Function that creates a search task for a query.
         :param min_chars: Minimum number of characters required to start a search.
         :param debounce: Time to wait before executing a search after input changes.
-        :param on_select: Function to call when an item is selected.
+        :param on_click: Function to call when an item is clicked.
         :param observe_parent: Whether to observe the parent element for focus events.
         :param factory: The factory to use for creating the flex list.
         """
@@ -65,7 +65,7 @@ class Typeahead(Popover):
                 on_search=on_search,
                 min_chars=min_chars,
                 debounce=debounce,
-                on_select=lambda item: self._handle_item_select(item),
+                on_click=lambda item: self._handle_item_select(item),
                 on_content_update=self._handle_content_update,
                 factory=factory
             )

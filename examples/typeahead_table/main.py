@@ -48,7 +48,7 @@ def index():
             on_search=create_search_task,
             min_chars=1,
             # Convert the selected product to string using the same function
-            on_select=lambda product: product_input.set_value(product_to_string(product)),
+            on_click=lambda product: product_input.set_value(product_to_string(product)),
             factory=FlexTableFactory(value_column='name')  # Using keyword argument from base class
         ) as typeahead:
             pass

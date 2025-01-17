@@ -17,13 +17,13 @@ class SearchList(FlexList, SearchResultHandler):
                  on_search: Callable[[str], SearchTask] | None = None,
                  min_chars: int = 1,
                  debounce: float = 0.3,
-                 on_select: Callable[[Any], None] | None = None,
+                 on_click: Callable[[Any], None] | None = None,
                  on_content_update: Handler[SearchListContentUpdateEventArguments] | None = None,
                  poll_interval: float = 0.1,
                  factory: FlexListFactory | None = None
                  ):
         super().__init__(
-            on_select=on_select,
+            on_click=on_click,
             on_content_update=on_content_update,
             factory=factory
         )

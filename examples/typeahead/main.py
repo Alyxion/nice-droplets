@@ -36,7 +36,7 @@ def index():
         with dui.typeahead(
             on_search=lambda query: SearchTask(search_fruits_filter, query),
             min_chars=1,
-            on_select=lambda fruit: fruit_input.set_value(fruit)
+            on_click=lambda fruit: fruit_input.set_value(fruit)
         ):
             pass  # Content is managed by the typeahead component
 
