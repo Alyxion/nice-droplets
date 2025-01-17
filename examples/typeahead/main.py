@@ -30,17 +30,16 @@ async def search_fruits_filter(query: str) -> list[str]:
 
 @ui.page('/')
 def index():
-    # Dark mode toggle
     ui.markdown('## Fruit Search Example').classes('text-h5 mt-4 mb-2')
     
-    # Simple fruit search
+    # Simple fruit search with default list factory
     with ui.input(label='Search fruits', placeholder='Type to search...') as fruit_input:
-        with dui.typeahead(
+        dui.typeahead(
             on_search=lambda query: QueryTask(search_fruits_filter, query),
             min_chars=1,
-            on_click=lambda fruit: fruit_input.set_value(fruit)
-        ):
-            pass  # Content is managed by the typeahead component
+            on_value_select=lambda e: e.item,  # Simply return the fruit name
+            factory="Default"  # Using string name for default factory
+        )
 
     # Show all fruits for reference
     ui.markdown('### Available Fruits:').classes('mt-4 mb-2')

@@ -20,7 +20,7 @@ Apply the following rules:
 
 * The `ui` module is the entry point for building UIs, it contains all the basic elements.
 * The `ui.page` element is the entry point for building UIs. In sample app the method `@ui.page` is used to define the main page, the method is named index.
-* THe most important layouting elements are `ui.row` and `ui.column` to create a row or column of elements.
+* The most important layouting elements are `ui.row` and `ui.column` to create a row or column of elements.
 * `ui.grid` can be used to create a grid of elements.
 * Use the `ui.element` element to create custom elements.
 * To add views nested within a view, you need to use the with statement to enter the context of the parent view.
@@ -90,7 +90,7 @@ class MyElement(ui.element, component="my_element.js"):
         
 ```
 
-### JS for Qus
+### JS for Qusar
 
 ```js
 export default {

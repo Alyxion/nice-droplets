@@ -1,11 +1,11 @@
 import os
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import datetime
 
 from nicegui import ui
 
 from nice_droplets import dui
-from nice_droplets.factories import FlexItemListFactory, FlexDefaultFactory, FlexTableFactory
+from nice_droplets.factories import FlexItemListFactory, FlexListFactory
 
 @dataclass
 class Person:
@@ -36,14 +36,13 @@ class PersonListFactory(FlexItemListFactory):
                 ui.label(f'{data.age} years old').classes('text-body2')
 
     
-    
 @ui.page('/')
 def main():
     with ui.row().classes('w-full items-start gap-4'):
         # Simple items
         with ui.card().classes('w-80'):
             ui.label('Simple Items').classes('text-h6 q-pa-md')
-            with dui.flex_list(factory=FlexDefaultFactory()) as list:
+            with dui.flex_list(factory="Default") as list:  # Using string name instead of FlexDefaultFactory()
                 list.update_items([
                     'Item 1',
                     'Item 2',
@@ -60,7 +59,8 @@ def main():
         # Rich items
         with ui.card().classes('w-80'):
             ui.label('Rich Items').classes('text-h6 q-pa-md')
-            with dui.flex_list(factory=FlexItemListFactory(bordered=True, separator=True, padding=True)) as list:
+            # Using string name "Item" with kwargs
+            with dui.flex_list(factory=FlexListFactory.create_by_name("Item", bordered=True, separator=True, padding=True)) as list:
                 list.update_items([
                     {
                         'label': 'Item 1',
@@ -104,7 +104,7 @@ def main():
         # Table items
         with ui.card().classes('w-80'):
             ui.label('Table Items').classes('text-h6 q-pa-md')
-            with dui.flex_list(factory=FlexTableFactory()) as list:
+            with dui.flex_list(factory="Table") as list:  # Using string name instead of FlexTableFactory()
                 projects = [
                     Project('Project 1', 'In Progress', 'High'),
                     Project('Project 2', 'Done', 'Medium'),

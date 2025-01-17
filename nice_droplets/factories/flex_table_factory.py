@@ -4,7 +4,7 @@ from nicegui import ui
 
 from .flex_list_factory import FlexListFactory
 
-class FlexTableFactory(FlexListFactory):
+class FlexTableFactory(FlexListFactory, short_name="Table"):
     """Factory for creating table-based lists with structured data."""
     
     def __init__(self, *, columns: list[str | dict] | None = None, **kwargs):

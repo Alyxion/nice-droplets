@@ -2,7 +2,6 @@ import os
 
 from nicegui import ui
 import nice_droplets.dui as dui
-from nice_droplets.factories import FlexTableFactory
 from nice_droplets.tasks.query_task import QueryTask
 
 
@@ -60,7 +59,7 @@ def index():
                 on_value_select=lambda e: e.item['name'],
                 on_search=lambda query: create_search_task(query, 'name'),
                 min_chars=1,
-                factory=FlexTableFactory(columns=columns)
+                factory="Table"  # Using string name instead of FlexTableFactory instance
             )
         
         # Product category field

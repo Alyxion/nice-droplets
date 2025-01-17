@@ -4,7 +4,7 @@ from nicegui import ui
 
 from .flex_list_factory import FlexListFactory
 
-class FlexDefaultFactory(FlexListFactory):
+class FlexDefaultFactory(FlexListFactory, short_name="Default"):
     """Factory for creating simple label-based list items"""
     def __init__(self):
         super().__init__()

@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Union
 from nicegui.events import ValueChangeEventArguments, Handler
 
 from nice_droplets.tasks.query_task import QueryTask
@@ -6,7 +6,6 @@ from nice_droplets.components.search_manager import SearchManager, SearchResultH
 from nice_droplets.events import SearchListContentUpdateEventArguments
 from nice_droplets.factories import FlexListFactory
 from nice_droplets.elements.flex_list import FlexList
-
 
 
 class SearchList(FlexList, SearchResultHandler):
@@ -20,8 +19,19 @@ class SearchList(FlexList, SearchResultHandler):
                  on_click: Callable[[Any], None] | None = None,
                  on_content_update: Handler[SearchListContentUpdateEventArguments] | None = None,
                  poll_interval: float = 0.1,
-                 factory: FlexListFactory | None = None
+                 factory: Union[FlexListFactory, str] | None = None
                  ):
+        """Initialize the search list.
+        
+        :param on_search: Function that creates a search task for a query.
+        :param min_chars: Minimum number of characters required to start a search.
+        :param debounce: Time to wait before executing a search after input changes.
+        :param on_click: Function to call when an item is clicked.
+        :param on_content_update: Handler for content update events.
+        :param poll_interval: Interval for polling search results.
+        :param factory: Factory to use for creating the flex views. Can be either a FlexListFactory instance
+                      or a string name (e.g., "Item", "Table", "Default", or their capital letter versions like "I", "T", "D")
+        """
         super().__init__(
             on_click=on_click,
             on_content_update=on_content_update,

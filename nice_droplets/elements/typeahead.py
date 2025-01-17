@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Union
 from nicegui import ui
 from nicegui.element import Element
 from nicegui.elements.mixins.value_element import ValueElement
@@ -32,7 +32,7 @@ class Typeahead(Popover):
                  debounce: float = 0.1,
                  on_click: Callable[[Any], None] | None = None,
                  observe_parent: bool = True,     
-                 factory: FlexListFactory | None = None,
+                 factory: Union[FlexListFactory, str] | None = None,
                  on_show: Handler[ShowPopoverEventArguments] | None = None,
                  on_hide: Handler[HidePopoverEventArguments] | None = None,
                  on_value_select: Handler[TypeaheadValueSelectEventArguments] | None = None,
@@ -45,7 +45,8 @@ class Typeahead(Popover):
         :param debounce: Time to wait before executing a search after input changes.
         :param on_click: Function to call when an item is clicked.
         :param observe_parent: Whether to observe the parent element for focus events.
-        :param factory: The factory to use for creating the flex list.
+        :param factory: Factory to use for creating the flex views. Can be either a FlexListFactory instance
+                      or a string name (e.g., "Item", "Table", "Default", or their capital letter versions like "I", "T", "D")
         :param on_show: Handler for when the popover is shown.
         :param on_hide: Handler for when the popover is hidden.
         :param on_value_select: Optional callback for handling value selection for this element
@@ -126,13 +127,13 @@ class Typeahead(Popover):
 
     async def _handle_key(self, e: GenericEventArguments) -> None:
         """Handle keyboard events."""
-        if e.sender != self._current_target:
-            return
-            
         if self._hot_key_handler.verify('showSuggestions', e):
             self.show_at(e.sender)
             return
 
+        if e.sender != self._current_target:
+            return
+            
         if self._hot_key_handler.verify('cancel', e):
             self.hide()
             return

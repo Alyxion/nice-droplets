@@ -9,7 +9,7 @@ from nice_droplets.elements.list import List
 from nice_droplets.elements.item_section import ItemSection
 from .flex_list_factory import FlexListFactory
 
-class FlexItemListFactory(FlexListFactory):
+class FlexItemListFactory(FlexListFactory, short_name="Item"):
     
     def __init__(self, on_item_click: Callable[[FlexFactoryItemClickedArguments], None] | None = None, **kwargs):
         """FlexItemListFactory

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 from dataclasses import dataclass
 
 from nicegui import ui
@@ -13,7 +13,7 @@ from nice_droplets.events import SearchListContentUpdateEventArguments, FlexList
 class FlexList(ui.element):    
     def __init__(self, *, 
                  items: Optional[list[Any]] = None,
-                 factory: Optional[FlexListFactory] = None,
+                 factory: Optional[Union[FlexListFactory, str]] = None,
                  on_content_update: Handler[SearchListContentUpdateEventArguments] | None = None,
                  on_click: Handler[FlexListItemClickedArguments] | None = None,
                  ):
@@ -22,7 +22,8 @@ class FlexList(ui.element):
         The FlexList component displays a list of items using a flexible item factory.
 
         :param items: List of items to display.
-        :param factory: Factory to use for creating the flex views.
+        :param factory: Factory to use for creating the flex views. Can be either a FlexListFactory instance
+                      or a string name (e.g., "Item", "Table", "Default", or their capital letter versions like "I", "T", "D")
         :param on_content_update: Handler for content update events.
         :param on_click: Handler for click events.
         """
@@ -30,7 +31,12 @@ class FlexList(ui.element):
         self._content_update_handlers = [on_content_update] if on_content_update else []
         self._click_handlers = [on_click] if on_click else []
         self._items: list[Any] = items or []
-        self._view_factory = factory or FlexDefaultFactory()
+        
+        if isinstance(factory, str):
+            self._view_factory = FlexListFactory.create_by_name(factory)
+        else:
+            self._view_factory = factory or FlexDefaultFactory()
+            
         self._view_factory.on_click(self._handle_item_click)
         self._container = self._view_factory.create_container()
         self._props['container_id'] = self._container.id
