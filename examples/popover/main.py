@@ -1,3 +1,4 @@
+import os
 import re
 
 from nicegui import ui
@@ -89,4 +90,4 @@ async def index():
                 for key, text in PASSWORD_REQUIREMENTS.items()
             }
 
-ui.run()
+ui.run(show=os.getenv('SHOW_UI', '1') == '1')

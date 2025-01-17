@@ -1,3 +1,5 @@
+import os
+
 from nicegui import ui
 import nice_droplets.dui as dui
 from nice_droplets.factories import FlexTableFactory
@@ -82,4 +84,4 @@ def index():
         
         typeahead.on_value_select = update_all_fields
 
-ui.run()
+ui.run(show=os.getenv('SHOW_UI', '1') == '1')

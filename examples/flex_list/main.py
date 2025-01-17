@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass, asdict
 from datetime import datetime
 
@@ -118,4 +119,4 @@ def main():
                 list.on_click(on_item_clicked)
 
 
-ui.run()
+ui.run(show=os.getenv('SHOW_UI', '1') == '1')

@@ -1,3 +1,5 @@
+import os
+
 from nicegui import ui
 import nice_droplets.dui as dui
 from nice_droplets.tasks.query_task import QueryTask
@@ -46,4 +48,4 @@ def index():
         for fruit in sorted(FRUITS):
             ui.badge(fruit)
 
-ui.run()
+ui.run(show=os.getenv('SHOW_UI', '1') == '1')

@@ -45,18 +45,23 @@ def kill_process(process):
         except Exception as e:
             logging.error(f"Error killing process: {e}")
 
-def run_example(app_dir: Path, timeout: int = 10):
+def run_example(app_dir: Path, is_first: bool = False, timeout: int = 3):
     """Run an example app and log any errors."""
     logging.info(f"\n{'='*80}\nTesting {app_dir.name}")
     
     try:
+        # Set environment variable for UI visibility
+        env = os.environ.copy()
+        env['SHOW_UI'] = '1' if is_first else '0'
+        
         # Start the process in a new process group
         process = subprocess.Popen(
             ["poetry", "run", "python", "main.py"],
             cwd=app_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            preexec_fn=os.setsid  # Create new process group
+            preexec_fn=os.setsid,  # Create new process group
+            env=env
         )
         
         # Wait briefly to catch immediate startup errors
@@ -91,15 +96,15 @@ def main():
     
     current_process = None
     try:
-        for app_dir in example_apps:
+        for i, app_dir in enumerate(example_apps):
             # Kill previous process if it exists
             if current_process:
                 logging.info(f"Stopping previous example")
                 kill_process(current_process)
                 current_process = None
             
-            # Run new example
-            current_process = run_example(app_dir)
+            # Run new example (first example shows UI)
+            current_process = run_example(app_dir, is_first=(i == 0))
     
     finally:
         # Cleanup on exit

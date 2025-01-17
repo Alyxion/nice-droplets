@@ -24,7 +24,8 @@ class FlexItemListFactory(FlexListFactory):
             - ... and other arguments supported by dui.list
         """
         super().__init__(on_item_click=on_item_click)
-        self._list_kwargs = rem_kwargs
+        # Extract list-specific kwargs
+        self._list_kwargs = kwargs
 
     def create_container(self) -> ui.element:
         """Create and return the container element"""
