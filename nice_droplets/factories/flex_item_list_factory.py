@@ -1,18 +1,30 @@
-from typing import Any
+import inspect
+from typing import Any, Callable
 
 from nicegui import ui
 
+from nice_droplets.events import FlexFactoryItemClickedArguments
 from nice_droplets.elements.item import Item
 from nice_droplets.elements.list import List
 from nice_droplets.elements.item_section import ItemSection
 from .flex_list_factory import FlexListFactory
 
 class FlexItemListFactory(FlexListFactory):
-    """Factory for creating item lists with advanced features like title, subtitle and avatar."""
+    
+    def __init__(self, on_item_click: Callable[[FlexFactoryItemClickedArguments], None] | None = None, **kwargs):
+        """FlexItemListFactory
 
-    def __init__(self, **kwargs: dict[str, Any]):
-        super().__init__()
-        self._list_kwargs = kwargs
+        Factory for creating item lists with advanced features like title, subtitle and avatar.
+
+        :param on_item_click: Optional callback for handling item clicks        
+        :param kwargs: Additional keyword arguments:
+            - bordered (bool): applies a border to the list
+            - separator (bool): applies a separator between items
+            - padding (bool): applies default padding to the list
+            - ... and other arguments supported by dui.list
+        """
+        super().__init__(on_item_click=on_item_click)
+        self._list_kwargs = rem_kwargs
 
     def create_container(self) -> ui.element:
         """Create and return the container element"""

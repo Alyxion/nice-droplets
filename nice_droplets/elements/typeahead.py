@@ -12,7 +12,8 @@ from nice_droplets.components.hot_key_handler import HotKeyHandler
 from nice_droplets.events import (
     SearchListContentUpdateEventArguments,
     ShowPopoverEventArguments,
-    HidePopoverEventArguments
+    HidePopoverEventArguments,
+    TypeaheadValueSelectEventArguments
 )
 from nice_droplets.factories import FlexListFactory
 
@@ -34,6 +35,7 @@ class Typeahead(Popover):
                  factory: FlexListFactory | None = None,
                  on_show: Handler[ShowPopoverEventArguments] | None = None,
                  on_hide: Handler[HidePopoverEventArguments] | None = None,
+                 on_value_select: Handler[TypeaheadValueSelectEventArguments] | None = None,
                  **kwargs            
                  ):
         """Initialize the typeahead component.
@@ -46,6 +48,7 @@ class Typeahead(Popover):
         :param factory: The factory to use for creating the flex list.
         :param on_show: Handler for when the popover is shown.
         :param on_hide: Handler for when the popover is hidden.
+        :param value_callback: Function to convert a selected item to its string representation.
         :param kwargs: Additional arguments to pass to the Popover constructor.
         """
         # Set default popover properties while allowing overrides through kwargs
@@ -65,6 +68,7 @@ class Typeahead(Popover):
         self._event_helper: EventHandlerTracker | None = None
         self._min_chars = min_chars
         self._selected_value = None
+        self._on_value_select = on_value_select
         
         self._hot_key_handler = HotKeyHandler({
             'showSuggestions': {
@@ -150,13 +154,19 @@ class Typeahead(Popover):
 
     def _handle_item_select(self, e: Any) -> None:
         """Handle when a suggestion item is selected."""
-        if not self._current_target:
+        if not self._current_target or not e.item:
             return
-        value = self._search_list._view_factory._to_string(e.item) if e.item else ''
-        if isinstance(value, str):
-            self._selected_value = value
-            self._current_target.set_value(value)
-            self._search_list.set_search_query('')
+        
+        # Create and emit event arguments
+        event_args = TypeaheadValueSelectEventArguments(sender=self, item=e.item)
+        if self._on_value_select:
+            self._on_value_select(event_args)
+        
+        # Use event value or fallback to str
+        value = event_args.value if event_args.value is not None else str(e.item)
+        self._selected_value = value
+        self._current_target.set_value(value)
+        self._search_list.set_search_query('')
         self.hide()
 
     def _handle_content_update(self, e: SearchListContentUpdateEventArguments) -> None:

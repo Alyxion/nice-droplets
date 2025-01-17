@@ -7,18 +7,9 @@ from .flex_list_factory import FlexListFactory
 class FlexTableFactory(FlexListFactory):
     """Factory for creating table-based lists with structured data."""
     
-    def __init__(self, *, 
-    value_column: Optional[str] = None,
-    to_string: Optional[Callable[[Any], str]] = None):
-        """Initialize the table factory.
-        
-        :param value_column: If provided, use this column to convert items to strings
-        :param to_string: Optional callback function that converts a selected item to a string.
-                       If not provided, str() will be used on the item.        
-        """
-        super().__init__(to_string=to_string)
-        if value_column and not to_string:
-            self._to_string = lambda item: str(self.item_to_dict(item)[value_column])
+    def __init__(self, **kwargs):
+        """Initialize the table factory."""
+        super().__init__(**kwargs)
         self._table = None
         
     def create_container(self) -> ui.element:

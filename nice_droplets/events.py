@@ -7,6 +7,12 @@ from nicegui.events import UiEventArguments, EventArguments
 
 
 @dataclass(**KWONLY_SLOTS)
+class TypeaheadValueSelectEventArguments(UiEventArguments):
+    """Arguments for when a value is selected in a typeahead."""
+    item: Any
+
+
+@dataclass(**KWONLY_SLOTS)
 class ShowPopoverEventArguments(UiEventArguments):
     target: Element
 

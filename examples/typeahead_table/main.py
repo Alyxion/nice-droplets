@@ -47,9 +47,8 @@ def index():
         with dui.typeahead(
             on_search=create_search_task,
             min_chars=1,
-            # Convert the selected product to string using the same function
-            on_click=lambda product: product_input.set_value(product['name']),
-            factory=FlexTableFactory(value_column='name')  # Using keyword argument from base class
+            factory=FlexTableFactory(),
+            on_value_select=lambda e: setattr(e, 'value', e.item['name'])
         ) as typeahead:
             pass
 
