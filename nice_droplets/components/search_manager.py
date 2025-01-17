@@ -53,6 +53,10 @@ class SearchManager:
         self._poll_timer: ui.timer | None = None
         self._poll_interval = poll_interval
 
+    def set_search_handler(self, on_search: Callable[[str], QueryTask] | None) -> None:
+        """Set the search handler for the search manager."""
+        self._on_search = on_search
+
     def handle_search(self, query: str) -> None:
         """Handle a new search query.
         

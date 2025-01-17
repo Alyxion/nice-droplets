@@ -48,7 +48,7 @@ class Typeahead(Popover):
         :param factory: The factory to use for creating the flex list.
         :param on_show: Handler for when the popover is shown.
         :param on_hide: Handler for when the popover is hidden.
-        :param value_callback: Function to convert a selected item to its string representation.
+        :param on_value_select: Optional callback for handling value selection for this element
         :param kwargs: Additional arguments to pass to the Popover constructor.
         """
         # Set default popover properties while allowing overrides through kwargs
@@ -68,7 +68,8 @@ class Typeahead(Popover):
         self._event_helper: EventHandlerTracker | None = None
         self._min_chars = min_chars
         self._selected_value = None
-        self._on_value_select = on_value_select
+        self._element_value_selects: dict[Element, Handler[TypeaheadValueSelectEventArguments]] = {}
+        self._element_searches: dict[Element, Callable[[str], QueryTask]] = {}
         
         self._hot_key_handler = HotKeyHandler({
             'showSuggestions': {
@@ -82,7 +83,6 @@ class Typeahead(Popover):
 
         with self:
             self._search_list = SearchList(
-                on_search=on_search,
                 min_chars=min_chars,
                 debounce=debounce,
                 on_click=lambda item: self._handle_item_select(item),
@@ -91,21 +91,37 @@ class Typeahead(Popover):
             )
 
         if observe_parent:
-            parent = ui.context.slot.parent
-            self.observe(parent)
+            parent = ui.context.slot.parent            
+            self.observe(parent, on_value_select=on_value_select, on_search=on_search)
 
-    def observe(self, element: Element):
-        """Observe an element for focus events to show typeahead suggestions."""
+    def observe(self, element: Element, *, 
+               on_value_select: Handler[TypeaheadValueSelectEventArguments] | None = None,
+               on_search: Callable[[str], QueryTask] | None = None):
+        """Observe an element for focus events to show typeahead suggestions.
+        
+        :param element: The element to observe
+        :param on_value_select: Optional callback for handling value selection for this element
+        :param on_search: Optional callback for handling search for this element
+        """
         super().observe(element)
         if isinstance(element, ValueElement):
             element.on('keydown', self._handle_key)
             element.on_value_change(self._handle_input_change)
+            if not on_value_select:
+                on_value_select = lambda e: str(e.item)
+            self._element_value_selects[element] = on_value_select
+            if on_search:
+                self._element_searches[element] = on_search
 
     def unobserve(self, element: Element):
         """Stop observing an element for focus events."""
         super().unobserve(element)
-        if self._current_target and self._current_target.id == element.id:
+        if self._current_target and self._current_target == element:
             self._remove_current_target()
+        if element in self._element_value_selects:
+            del self._element_value_selects[element]
+        if element in self._element_searches:
+            del self._element_searches[element]
 
     async def _handle_key(self, e: GenericEventArguments) -> None:
         """Handle keyboard events."""
@@ -131,6 +147,11 @@ class Typeahead(Popover):
         self._remove_current_target()
         self._current_target = self._targets.get(e.args['target'], None)
         self._event_helper = EventHandlerTracker(self._current_target)
+        
+        # Set the search handler for the current target
+        if self._current_target in self._element_searches:
+            self._search_list.set_search_handler(self._element_searches[self._current_target])
+        
         self._search_list.set_search_query(self._current_target.value)
 
     def _remove_current_target(self) -> None:
@@ -157,15 +178,15 @@ class Typeahead(Popover):
         if not self._current_target or not e.item:
             return
         
-        # Create and emit event arguments
-        event_args = TypeaheadValueSelectEventArguments(sender=self, item=e.item)
-        if self._on_value_select:
-            self._on_value_select(event_args)
+        # Create event arguments
+        event_args = TypeaheadValueSelectEventArguments(client=self.client, sender=self, item=e.item)
         
-        # Use event value or fallback to str
-        value = event_args.value if event_args.value is not None else str(e.item)
-        self._selected_value = value
-        self._current_target.set_value(value)
+        # Try element-specific handler first, then fall back to global handler
+        for element, handler in self._element_value_selects.items():
+            value = handler(event_args)
+            if value is not None:
+                element.set_value(value)
+        
         self._search_list.set_search_query('')
         self.hide()
 

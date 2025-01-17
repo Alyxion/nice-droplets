@@ -37,6 +37,11 @@ class SearchList(FlexList, SearchResultHandler):
             poll_interval=poll_interval
         )
 
+    def set_search_handler(self, on_search: Callable[[str], QueryTask] | None) -> None:
+        """Set the search handler for the search list."""
+        self._on_search = on_search
+        self._search_manager.set_search_handler(on_search)
+
     def set_search_query(self, query: str) -> None:
         """Handle input changes"""
         if len(query) < self._search_manager._min_chars:
