@@ -2,7 +2,7 @@ import pytest
 from nicegui import ui
 from nicegui.testing import Screen
 from nice_droplets.elements.search_list import SearchList
-from nice_droplets.components import SearchTask
+from nice_droplets.tasks.query_task import QueryTask
 
 @pytest.fixture
 def search_results() -> list[str]:
@@ -10,11 +10,11 @@ def search_results() -> list[str]:
     return ['Result 1', 'Result 2', 'Result 3']
 
 @pytest.fixture
-def mock_search_task(search_results) -> SearchTask:
+def mock_search_task(search_results) -> QueryTask:
     """Create a mock search task that returns predefined results."""
     async def search_func():
         return search_results
-    return SearchTask(search_func)
+    return QueryTask(search_func)
 
 def test_search_list_initialization(screen: Screen):
     """Test SearchList initialization with default parameters."""
@@ -72,7 +72,7 @@ def test_content_update_event(screen: Screen, search_results):
 
 def test_search_with_callback(screen: Screen, search_results, mock_search_task):
     """Test search with callback function."""
-    def search_callback(query: str) -> SearchTask:
+    def search_callback(query: str) -> QueryTask:
         return mock_search_task
     
     search_list = SearchList(on_search=search_callback)

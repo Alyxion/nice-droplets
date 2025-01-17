@@ -1,6 +1,6 @@
 from nicegui import ui
 import nice_droplets.dui as dui
-from nice_droplets.components.search_task import SearchTask
+from nice_droplets.tasks.query_task import QueryTask
 
 FRUITS = [
     'Apple', 'Apricot', 'Avocado',
@@ -34,7 +34,7 @@ def index():
     # Simple fruit search
     with ui.input(label='Search fruits', placeholder='Type to search...') as fruit_input:
         with dui.typeahead(
-            on_search=lambda query: SearchTask(search_fruits_filter, query),
+            on_search=lambda query: QueryTask(search_fruits_filter, query),
             min_chars=1,
             on_click=lambda fruit: fruit_input.set_value(fruit)
         ):

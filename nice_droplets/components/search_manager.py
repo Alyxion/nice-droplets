@@ -3,7 +3,7 @@
 from typing import Any, Callable, Protocol
 from nicegui import ui
 
-from .task_executor import TaskExecutor
+from nice_droplets.tasks.task_executor import TaskExecutor
 from nice_droplets.tasks import QueryTask
 
 

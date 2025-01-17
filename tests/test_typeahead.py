@@ -2,7 +2,7 @@ import pytest
 from nicegui import ui, run, app
 from nicegui.testing import Screen
 from nice_droplets.elements.typeahead import Typeahead
-from nice_droplets.components import SearchTask
+from nice_droplets.tasks.query_task import QueryTask
 
 ITEMS = [
     'Apple', 'Banana', 'Cherry',
@@ -34,7 +34,7 @@ def test_typeahead_search(screen: Screen):
     with ui.element():
         input_field = ui.input()
         typeahead = Typeahead(
-            on_search=lambda query: SearchTask(search_items, query)
+            on_search=lambda query: QueryTask(search_items, query)
         )
         typeahead.observe(input_field)
 
@@ -57,7 +57,7 @@ def test_typeahead_min_chars(screen: Screen):
     with ui.element():
         input_field = ui.input()
         typeahead = Typeahead(
-            on_search=lambda query: SearchTask(search_items, query),
+            on_search=lambda query: QueryTask(search_items, query),
             min_chars=2
         )
         typeahead.observe(input_field)
@@ -99,7 +99,7 @@ def test_typeahead_show_hide_events(screen: Screen):
             hide_count += 1
 
         typeahead = Typeahead(
-            on_search=lambda query: SearchTask(search_items, query),
+            on_search=lambda query: QueryTask(search_items, query),
             min_chars=2,
             on_show=on_show,
             on_hide=on_hide

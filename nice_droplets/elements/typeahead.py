@@ -6,7 +6,8 @@ from nicegui.events import ValueChangeEventArguments, GenericEventArguments, Han
 
 from nice_droplets.elements.popover import Popover
 from nice_droplets.elements.search_list import SearchList
-from nice_droplets.components import EventHandlerTracker, QueryTask
+from nice_droplets.components import EventHandlerTracker
+from nice_droplets.tasks.query_task import QueryTask
 from nice_droplets.components.hot_key_handler import HotKeyHandler
 from nice_droplets.events import (
     SearchListContentUpdateEventArguments,

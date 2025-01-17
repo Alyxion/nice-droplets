@@ -1,7 +1,7 @@
 from nicegui import ui
 import nice_droplets.dui as dui
 from nice_droplets.factories import FlexTableFactory
-from nice_droplets.components.search_task import SearchTask
+from nice_droplets.tasks.query_task import QueryTask
 
 
 # Sample data with more structured information
@@ -18,7 +18,7 @@ products = [
     {'id': 10, 'name': 'Samsung Galaxy Watch 4', 'category': 'Wearables', 'price': 249.99, 'stock': 45},
 ]
 
-class TableSearchTask(SearchTask):
+class TableSearchTask(QueryTask):
 
     def __init__(self, products: list[dict], query: str):
         super().__init__()
@@ -48,7 +48,7 @@ def index():
             on_search=create_search_task,
             min_chars=1,
             # Convert the selected product to string using the same function
-            on_click=lambda product: product_input.set_value(product_to_string(product)),
+            on_click=lambda product: product_input.set_value(product['name']),
             factory=FlexTableFactory(value_column='name')  # Using keyword argument from base class
         ) as typeahead:
             pass

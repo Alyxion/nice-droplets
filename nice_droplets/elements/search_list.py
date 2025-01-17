@@ -1,7 +1,7 @@
 from typing import Any, Callable
 from nicegui.events import ValueChangeEventArguments, Handler
 
-from nice_droplets.components import QueryTask
+from nice_droplets.tasks.query_task import QueryTask
 from nice_droplets.components.search_manager import SearchManager, SearchResultHandler
 from nice_droplets.events import SearchListContentUpdateEventArguments
 from nice_droplets.factories import FlexListFactory
