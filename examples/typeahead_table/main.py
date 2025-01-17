@@ -19,7 +19,6 @@ products = [
 ]
 
 class TableSearchTask(QueryTask):
-
     def __init__(self, products: list[dict], query: str, field: str = 'name'):
         super().__init__()
         self.products = products
@@ -31,7 +30,7 @@ class TableSearchTask(QueryTask):
         query = self.query.lower()
         results = [
             product for product in self.products
-            if query in product[self.field].lower()
+            if query in str(product[self.field]).lower()
         ]
         self.set_elements(results)
     
@@ -42,6 +41,15 @@ def index():
     def create_search_task(query: str, field: str) -> TableSearchTask:
         return TableSearchTask(products, query, field)
     
+    # Define custom columns with both string and dictionary formats
+    columns = [
+        'id',  # Simple string format
+        {'name': 'name', 'label': 'Product Name', 'field': 'name'},  # Dictionary format with custom label
+        'category',  # Simple string format
+        {'name': 'price', 'label': 'Price ($)', 'field': 'price'},  # Dictionary format with custom label
+        {'name': 'stock', 'label': 'Stock Level', 'field': 'stock'}  # Dictionary format with custom label
+    ]
+    
     # Create a grid for product fields
     with ui.grid(columns=2).classes('w-96 gap-4'):
         # Product name field
@@ -50,7 +58,7 @@ def index():
                 on_value_select=lambda e: e.item['name'],
                 on_search=lambda query: create_search_task(query, 'name'),
                 min_chars=1,
-                factory=FlexTableFactory()
+                factory=FlexTableFactory(columns=columns)
             )
         
         # Product category field

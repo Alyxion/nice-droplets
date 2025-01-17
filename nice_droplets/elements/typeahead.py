@@ -87,6 +87,7 @@ class Typeahead(Popover):
                 debounce=debounce,
                 on_click=lambda item: self._handle_item_select(item),
                 on_content_update=self._handle_content_update,
+                on_search=on_search,
                 factory=factory
             )
 

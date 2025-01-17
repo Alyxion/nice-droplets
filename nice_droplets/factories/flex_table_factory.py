@@ -7,10 +7,16 @@ from .flex_list_factory import FlexListFactory
 class FlexTableFactory(FlexListFactory):
     """Factory for creating table-based lists with structured data."""
     
-    def __init__(self, **kwargs):
-        """Initialize the table factory."""
+    def __init__(self, *, columns: list[str | dict] | None = None, **kwargs):
+        """Initialize the table factory.
+        
+        :param columns: Optional list of column definitions. Each element can be either:
+                     - A string (field name, auto-converts to title case for label)
+                     - A dictionary with 'name', 'label', 'field' keys
+        """
         super().__init__(**kwargs)
         self._table = None
+        self._columns = columns
         
     def create_container(self) -> ui.element:
         self._container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
@@ -52,22 +58,30 @@ class FlexTableFactory(FlexListFactory):
         if not items:
             return
             
-        # Extract columns from the first item
-        sample_item = items[0]
-        if isinstance(sample_item, dict):
-            columns = [
-                {'name': key, 'label': key.title(), 'field': key}
-                for key in sample_item.keys()
-            ]
+        # Convert items to dictionaries
+        if isinstance(items[0], dict):
             rows = [item.copy() for item in items]
         else:
-            # For dataclass objects, convert to dict
-            data_dict = sample_item.to_dict()
+            rows = [item.to_dict() for item in items]
+
+        # Use provided columns or extract from first item
+        if self._columns:
+            columns = []
+            for col in self._columns:
+                if isinstance(col, str):
+                    columns.append({
+                        'name': col,
+                        'label': col.title(),
+                        'field': col
+                    })
+                else:
+                    columns.append(col)
+        else:
+            # Extract columns from the first row
             columns = [
                 {'name': key, 'label': key.title(), 'field': key}
-                for key in data_dict.keys()
+                for key in rows[0].keys()
             ]
-            rows = [item.to_dict() for item in items]
 
         # add invisible key column to every row
         for index, row in enumerate(rows):
