@@ -3,7 +3,7 @@ from typing import Generic, TypeVar
 from threading import Thread
 from nicegui import background_tasks, ui, run
 
-from nice_droplets.components.task import Task
+from .task import Task
 
 class TaskExecutor:
     """Executes tasks with debouncing"""
@@ -52,9 +52,9 @@ class TaskExecutor:
             self._current_task_started = True
             # Check if execute_async is overridden
             if self._current_task.is_async:
-                background_tasks.create(self._current_task.run_async())
+                background_tasks.create(self._current_task._run_async())
             else:
-                run.thread_pool.submit(self._current_task.run)
+                run.thread_pool.submit(self._current_task._run)
 
     @property
     def current_task(self) -> Task | None:

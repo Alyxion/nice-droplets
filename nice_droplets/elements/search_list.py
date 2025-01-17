@@ -1,7 +1,7 @@
 from typing import Any, Callable
 from nicegui.events import ValueChangeEventArguments, Handler
 
-from nice_droplets.components import SearchTask
+from nice_droplets.components import QueryTask
 from nice_droplets.components.search_manager import SearchManager, SearchResultHandler
 from nice_droplets.events import SearchListContentUpdateEventArguments
 from nice_droplets.factories import FlexListFactory
@@ -14,7 +14,7 @@ class SearchList(FlexList, SearchResultHandler):
 
     def __init__(self,
                  *,
-                 on_search: Callable[[str], SearchTask] | None = None,
+                 on_search: Callable[[str], QueryTask] | None = None,
                  min_chars: int = 1,
                  debounce: float = 0.3,
                  on_click: Callable[[Any], None] | None = None,

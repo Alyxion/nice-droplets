@@ -6,7 +6,7 @@ from nicegui.events import ValueChangeEventArguments, GenericEventArguments, Han
 
 from nice_droplets.elements.popover import Popover
 from nice_droplets.elements.search_list import SearchList
-from nice_droplets.components import EventHandlerTracker, SearchTask
+from nice_droplets.components import EventHandlerTracker, QueryTask
 from nice_droplets.components.hot_key_handler import HotKeyHandler
 from nice_droplets.events import (
     SearchListContentUpdateEventArguments,
@@ -25,7 +25,7 @@ class Typeahead(Popover):
 
     def __init__(self,
                  *,
-                 on_search: Callable[[str], SearchTask] | None = None,
+                 on_search: Callable[[str], QueryTask] | None = None,
                  min_chars: int = 1,
                  debounce: float = 0.1,
                  on_click: Callable[[Any], None] | None = None,

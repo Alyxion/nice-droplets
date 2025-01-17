@@ -64,8 +64,8 @@ class Task:
             return False
         return False
     
-    def run(self) -> None:
-        """Run the task and store its result or error."""
+    def _run(self) -> None:
+        """Run the task and store its result or error. Internal use only."""
         try:
             if not self.is_cancelled:
                 self.execute()
@@ -74,8 +74,8 @@ class Task:
         finally:
             self._is_done.set()
 
-    async def run_async(self) -> None:
-        """Run the task asynchronously and store its result or error."""
+    async def _run_async(self) -> None:
+        """Run the task asynchronously and store its result or error. Internal use only."""
         try:
             if not self.is_cancelled:
                 await self.execute_async()
