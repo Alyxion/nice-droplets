@@ -2,13 +2,17 @@ from typing import Any, Callable
 from nicegui import ui
 from nicegui.element import Element
 from nicegui.elements.mixins.value_element import ValueElement
-from nicegui.events import ValueChangeEventArguments, GenericEventArguments
+from nicegui.events import ValueChangeEventArguments, GenericEventArguments, Handler
 
 from nice_droplets.elements.popover import Popover
 from nice_droplets.elements.search_list import SearchList
 from nice_droplets.components import EventHandlerTracker, SearchTask
 from nice_droplets.components.hot_key_handler import HotKeyHandler
-from nice_droplets.events import SearchListContentUpdateEventArguments
+from nice_droplets.events import (
+    SearchListContentUpdateEventArguments,
+    ShowPopoverEventArguments,
+    HidePopoverEventArguments
+)
 from nice_droplets.factories import FlexListFactory
 
 
@@ -23,10 +27,13 @@ class Typeahead(Popover):
                  *,
                  on_search: Callable[[str], SearchTask] | None = None,
                  min_chars: int = 1,
-                 debounce: int = 0.1,
+                 debounce: float = 0.1,
                  on_click: Callable[[Any], None] | None = None,
                  observe_parent: bool = True,     
-                 factory: FlexListFactory | None = None            
+                 factory: FlexListFactory | None = None,
+                 on_show: Handler[ShowPopoverEventArguments] | None = None,
+                 on_hide: Handler[HidePopoverEventArguments] | None = None,
+                 **kwargs            
                  ):
         """Initialize the typeahead component.
         
@@ -36,14 +43,22 @@ class Typeahead(Popover):
         :param on_click: Function to call when an item is clicked.
         :param observe_parent: Whether to observe the parent element for focus events.
         :param factory: The factory to use for creating the flex list.
+        :param on_show: Handler for when the popover is shown.
+        :param on_hide: Handler for when the popover is hidden.
+        :param kwargs: Additional arguments to pass to the Popover constructor.
         """
-        super().__init__(
-            show_events=['focus', 'input'],
-            hide_events=['blur'],
-            docking_side='bottom left',
-            observe_parent=False,
-            default_style=True,            
-        )
+        # Set default popover properties while allowing overrides through kwargs
+        popover_kwargs = {
+            'show_events': ['focus', 'input'],
+            'hide_events': ['blur'],
+            'docking_side': 'bottom left',
+            'observe_parent': False,
+            'default_style': True,
+            'on_show': on_show,
+            'on_hide': on_hide,
+            **kwargs
+        }
+        super().__init__(**popover_kwargs)
         self.keep_hidden = True
         self._current_target: ValueElement | None = None
         self._event_helper: EventHandlerTracker | None = None
