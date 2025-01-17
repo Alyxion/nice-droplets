@@ -132,7 +132,7 @@ export default {
 * After creation a handler can be added to the list of handlers like in this example `on_show(self, handler: Handler[ShowPopoverEventArguments]) -> Self:` which adds the handler to the list of handlers.
 
 ```
-@dataclass
+@dataclass(**KWONLY_SLOTS)
 class MyEventArguments(UiEventArguments):
     message: str
 ```
@@ -141,3 +141,57 @@ class MyEventArguments(UiEventArguments):
 
 * Do not use Python template classes.
 * Do not use ABC.
+
+## Testing rules
+
+1. Always use the Screen fixture for UI components and open the screen before assertions:
+   ```python
+   def test_component(screen: Screen):
+       component = MyComponent()
+       screen.open('/')
+       # assertions
+   ```
+2. Create UI elements within a proper context using `with ui.element():` when needed:
+   ```python
+   with ui.element():
+       component = MyComponent()
+   ```
+3. Test initialization with default and custom parameters to verify proper setup
+4. For visual elements, use screen.should_contain() and screen.should_not_contain() to verify content:
+   ```python
+   screen.should_contain('Expected Text')
+   screen.should_not_contain('Unwanted Text')
+   ```
+5. Add screen.wait() after UI updates to allow for rendering:
+   ```python
+   component.update()
+   screen.wait(0.5)  # Wait for UI update
+   ```
+6. Test event handlers by creating mock callbacks and verifying they're called correctly:
+   ```python
+   clicked_item = None
+   def on_click(e):
+       nonlocal clicked_item
+       clicked_item = e.item
+   ```
+7. For async components, use @pytest.mark.asyncio and await async operations:
+   ```python
+   @pytest.mark.asyncio
+   async def test_async_component():
+       await component.async_operation()
+   ```
+
+   Use async tests only as last resort, usually you can write NiceGUI tests in a synchronous way.
+8. Test both success and error cases, including edge cases and invalid inputs
+9. Use fixtures for common test data and mock objects to keep tests DRY
+10. Test UI interactions using screen.click() or mock events:
+    ```python
+    screen.click('Button Text')
+    # or
+    component._handle_key(MockEventArguments('Enter'))
+    ```
+11. Group related tests logically and provide clear docstrings explaining test purpose
+12. Test component state changes and verify they're reflected in the UI
+13. For factories/builders, test all supported creation patterns and configurations
+14. Mock external dependencies using pytest fixtures or unittest.mock
+15. Follow the pattern: arrange (setup) → act (perform action) → assert (verify result)
