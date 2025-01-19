@@ -33,10 +33,11 @@ def items():
     """Sample items for testing."""
     return ['Item 1', 'Item 2', 'Item 3']
 
-def test_factory_initialization():
+def test_factory_initialization(screen: Screen):
     """Test factory initialization with and without click handler."""
     # Test without click handler
     factory = SampleFlexListFactory()
+    screen.open('/')
     assert factory.index == -1
     assert len(factory._click_handler) == 0
 
@@ -45,8 +46,9 @@ def test_factory_initialization():
     factory = SampleFlexListFactory(on_item_click=on_click)
     assert len(factory._click_handler) == 1
 
-def test_factory_index_management(factory: SampleFlexListFactory):
+def test_factory_index_management(screen: Screen, factory: SampleFlexListFactory):
     """Test index setting and management."""
+    screen.open('/')
     factory.index = 1
     assert factory.index == 1
     assert factory._previous_index == -1
@@ -55,7 +57,7 @@ def test_factory_index_management(factory: SampleFlexListFactory):
     assert factory.index == 2
     assert factory._previous_index == 1
 
-def test_factory_item_click_handling(factory: SampleFlexListFactory, items):
+def test_factory_item_click_handling(screen: Screen, factory: SampleFlexListFactory, items):
     """Test item click event handling."""
     clicked_data = None
     def on_click(e: FlexFactoryItemClickedArguments):
@@ -63,14 +65,15 @@ def test_factory_item_click_handling(factory: SampleFlexListFactory, items):
         clicked_data = e.item
 
     factory.on_click(on_click)
-    factory._container = ui.element('div')
+    factory.create_container()
+    screen.open('/')
     factory.update_items(items)
     
     # Test clicking first item
     factory.handle_item_click(0)
     assert clicked_data == 'Item 1'
 
-def test_factory_item_state_management(factory: SampleFlexListFactory):
+def test_factory_item_state_management(screen: Screen, factory: SampleFlexListFactory):
     """Test item enable/disable functionality."""
     items = [
         {'text': 'Item 1', 'disabled': True},
@@ -78,7 +81,8 @@ def test_factory_item_state_management(factory: SampleFlexListFactory):
         {'text': 'Item 3'}
     ]
     
-    factory._container = ui.element('div')
+    factory.create_container()
+    screen.open('/')
     factory.update_items(items)
     
     # Check disabled state detection
@@ -86,9 +90,10 @@ def test_factory_item_state_management(factory: SampleFlexListFactory):
     assert factory.is_item_disabled(items[1]) is False
     assert factory.is_item_disabled(items[2]) is False
 
-def test_factory_clear(factory: SampleFlexListFactory, items):
+def test_factory_clear(screen: Screen, factory: SampleFlexListFactory, items):
     """Test clearing items."""
-    factory._container = ui.element('div')
+    factory.create_container()
+    screen.open('/')
     factory.update_items(items)
     assert len(factory._items) == 3
     assert len(factory._item_elements) == 3
@@ -99,9 +104,10 @@ def test_factory_clear(factory: SampleFlexListFactory, items):
     assert factory.index == -1
     assert factory._previous_index == -1
 
-def test_factory_update_items(factory: SampleFlexListFactory, items):
+def test_factory_update_items(screen: Screen, factory: SampleFlexListFactory, items):
     """Test updating items."""
-    factory._container = ui.element('div')
+    factory.create_container()
+    screen.open('/')
     factory.update_items(items)
     assert len(factory._items) == 3
     assert len(factory._item_elements) == 3
@@ -113,7 +119,7 @@ def test_factory_update_items(factory: SampleFlexListFactory, items):
     assert len(factory._item_elements) == 2
     assert factory._items == new_items
 
-def test_factory_item_click_with_disabled(factory: SampleFlexListFactory):
+def test_factory_item_click_with_disabled(screen: Screen, factory: SampleFlexListFactory):
     """Test click handling with disabled items."""
     items = [
         {'text': 'Item 1', 'disabled': True},
@@ -125,7 +131,8 @@ def test_factory_item_click_with_disabled(factory: SampleFlexListFactory):
         clicked_items.append(e.item)
     
     factory.on_click(on_click)
-    factory._container = ui.element('div')
+    factory.create_container()
+    screen.open('/')
     factory.update_items(items)
     
     # Click disabled item

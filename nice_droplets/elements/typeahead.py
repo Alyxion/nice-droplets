@@ -1,11 +1,10 @@
-from typing import Any, Callable, Union, Tuple
+from typing import Any, Callable, Union, Tuple, TYPE_CHECKING
 from nicegui import ui
 from nicegui.element import Element
 from nicegui.elements.mixins.value_element import ValueElement
 from nicegui.events import ValueChangeEventArguments, GenericEventArguments, Handler
 
 from nice_droplets.elements.popover import Popover
-from nice_droplets.elements.search_list import SearchList
 from nice_droplets.components import EventHandlerTracker
 from nice_droplets.tasks.query_task import QueryTask
 from nice_droplets.components.hot_key_handler import HotKeyHandler
@@ -15,8 +14,9 @@ from nice_droplets.events import (
     HidePopoverEventArguments,
     TypeaheadValueSelectEventArguments
 )
-from nice_droplets.factories import FlexListFactory
 
+if TYPE_CHECKING:
+    from nice_droplets.factories import FlexListFactory
 
 class Typeahead(Popover):
     """A typeahead component that shows suggestions below and input field or table cell as you type.
@@ -32,7 +32,7 @@ class Typeahead(Popover):
                  debounce: float = 0.1,
                  on_click: Callable[[Any], None] | None = None,
                  observe_parent: bool = True,     
-                 factory: Union[FlexListFactory, Tuple[FlexListFactory, dict], str] | None = None,
+                 factory: Union["FlexListFactory", Tuple["FlexListFactory", dict], str] | None = None,
                  on_show: Handler[ShowPopoverEventArguments] | None = None,
                  on_hide: Handler[HidePopoverEventArguments] | None = None,
                  on_value_select: Handler[TypeaheadValueSelectEventArguments] | None = None,
@@ -86,6 +86,8 @@ class Typeahead(Popover):
         })
 
         with self:
+            from nice_droplets.elements.search_list import SearchList
+
             self._search_list = SearchList(
                 min_chars=min_chars,
                 debounce=debounce,

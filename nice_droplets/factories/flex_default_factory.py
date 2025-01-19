@@ -1,13 +1,19 @@
-from typing import Any
+from typing import Any, Callable
 
 from nicegui import ui
 
 from .flex_list_factory import FlexListFactory
+from nice_droplets.events import FlexFactoryItemClickedArguments
 
 class FlexDefaultFactory(FlexListFactory, short_name="Default"):
-    """Factory for creating simple label-based list items"""
-    def __init__(self):
-        super().__init__()
+    """FlexDefaultFactory
+
+    Factory for creating simple, label-based list items.
+
+    :param on_item_click: Optional callback for handling item clicks
+    """
+    def __init__(self, *, on_item_click: Callable[[FlexFactoryItemClickedArguments], None] | None = None, **kwargs):
+        super().__init__(on_item_click=on_item_click, **kwargs)
         
     def create_container(self) -> ui.element:
         self._container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')

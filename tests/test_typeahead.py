@@ -84,6 +84,71 @@ def test_typeahead_min_chars(screen: Screen):
     screen.should_not_contain('Cherry')
 
 # test on_show and on_hide events
+def test_typeahead_factory_tuple_basic(screen: Screen):
+    """Test Typeahead with factory passed as tuple with parameters."""
+    clicked_item = None
+    def on_item_click(e):
+        nonlocal clicked_item
+        clicked_item = e.item
+
+    with ui.element():
+        input_field = ui.input()
+        typeahead = Typeahead(
+            on_search=lambda query: QueryTask(search_items, query),
+            factory=('Item', {'on_item_click': on_item_click})  # Use Item factory which handles on_item_click
+        )
+        typeahead.observe(input_field)
+
+    screen.open('/')
+
+    # Focus input and type search query
+    typeahead.show_at(input_field)
+    input_field.set_value('ap')
+    screen.wait(0.5)  # Wait for search
+
+    # Verify results are displayed
+    screen.should_contain('Apple')
+
+    # Simulate clicking the item
+    typeahead._search_list._view_factory.handle_item_click(0)
+    assert clicked_item == 'Apple'
+
+def test_typeahead_factory_tuple_table(screen: Screen):
+    """Test Typeahead with table factory passed as tuple with parameters."""
+    clicked_item = None
+    def on_item_click(e):
+        nonlocal clicked_item
+        clicked_item = e.item
+
+    with ui.element():
+        input_field = ui.input()
+        typeahead = Typeahead(
+            on_search=lambda query: QueryTask(lambda q: [{"name": "Apple", "type": "fruit"}], query),
+                factory=('Table', {
+                    'on_item_click': on_item_click,
+                    'columns': [
+                        {'name': 'name', 'label': 'Name', 'field': 'name'},
+                        {'name': 'type', 'label': 'Type', 'field': 'type'}
+                    ]
+                })
+        )
+        typeahead.observe(input_field)
+
+    screen.open('/')
+
+    # Focus input and type search query
+    typeahead.show_at(input_field)
+    input_field.set_value('ap')
+    screen.wait(1)  # Wait longer for table to render
+
+    # Verify table headers are shown (specific to table factory)
+    screen.should_contain('Name')  # Check for the column label
+    screen.should_contain('Type')  # Check for the capitalized column label
+
+    # Simulate clicking the item
+    typeahead._search_list._view_factory.handle_item_click(0)
+    assert clicked_item == {"name": "Apple", "type": "fruit"}
+
 def test_typeahead_show_hide_events(screen: Screen):
     with ui.element():
         input_field = ui.input()
