@@ -7,16 +7,21 @@ from .flex_list_factory import FlexListFactory
 class FlexTableFactory(FlexListFactory, short_name="Table"):
     """Factory for creating table-based lists with structured data."""
     
-    def __init__(self, *, columns: list[str | dict] | None = None, **kwargs):
+    def __init__(self, *, columns: list[str | dict] | None = None,
+                 row_key: str = 'id',
+                 **kwargs):
         """Initialize the table factory.
-        
+
         :param columns: Optional list of column definitions. Each element can be either:
                      - A string (field name, auto-converts to title case for label)
                      - A dictionary with 'name', 'label', 'field' keys
+        :param row_key: Name of the column containing unique data identifying the row
         """
         super().__init__(**kwargs)
         self._table = None
         self._columns = columns
+        self._row_key = row_key
+        self._rows = []
         
     def create_container(self) -> ui.element:
         self._container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
@@ -86,11 +91,14 @@ class FlexTableFactory(FlexListFactory, short_name="Table"):
         # add invisible key column to every row
         for index, row in enumerate(rows):
             row['_index'] = index
+
+        self.rows = rows
             
         # Create table with rows and columns
         with self._container:
             self._table = ui.table(
                 columns=columns,
+                row_key=self._row_key,
                 rows=rows,                
             )
             
