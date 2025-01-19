@@ -44,7 +44,6 @@ def index():
     
     # Define custom columns with both string and dictionary formats
     columns = [
-        'id',  # Simple string format
         {'name': 'name', 'label': 'Product Name', 'field': 'name'},  # Dictionary format with custom label
         'category',  # Simple string format
         {'name': 'price', 'label': 'Price ($)', 'field': 'price'},  # Dictionary format with custom label
@@ -59,7 +58,7 @@ def index():
                 on_value_select=lambda e: e.item['name'],
                 on_search=lambda query: create_search_task(query, 'name'),
                 min_chars=1,
-                factory="Table"  # Using string name instead of FlexTableFactory instance
+                factory=("Table", {"columns": columns})  # Using string name instead of FlexTableFactory instance
             )
         
         # Product category field

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, Tuple
 from dataclasses import dataclass
 
 from nicegui import ui
@@ -13,7 +13,7 @@ from nice_droplets.events import SearchListContentUpdateEventArguments, FlexList
 class FlexList(ui.element):    
     def __init__(self, *, 
                  items: Optional[list[Any]] = None,
-                 factory: Optional[Union[FlexListFactory, str]] = None,
+                 factory: Optional[Union[FlexListFactory, Tuple[FlexListFactory, dict], str]] = None,
                  on_content_update: Handler[SearchListContentUpdateEventArguments] | None = None,
                  on_click: Handler[FlexListItemClickedArguments] | None = None,
                  ):
@@ -23,7 +23,10 @@ class FlexList(ui.element):
 
         :param items: List of items to display.
         :param factory: Factory to use for creating the flex views. Can be either a FlexListFactory instance
-                      or a string name (e.g., "Item", "Table", "Default", or their capital letter versions like "I", "T", "D")
+                      or a string name (e.g., "Item", "Table", "Default", or their capital letter versions
+                      like "I", "T", "D")
+
+                      Parameters can be passed to the factory as a tuple.
         :param on_content_update: Handler for content update events.
         :param on_click: Handler for click events.
         """
@@ -31,8 +34,10 @@ class FlexList(ui.element):
         self._content_update_handlers = [on_content_update] if on_content_update else []
         self._click_handlers = [on_click] if on_click else []
         self._items: list[Any] = items or []
-        
-        if isinstance(factory, str):
+
+        if isinstance(factory, tuple):
+            self._view_factory = FlexListFactory.create_by_name(factory[0], **factory[1])
+        elif isinstance(factory, str):
             self._view_factory = FlexListFactory.create_by_name(factory)
         else:
             self._view_factory = factory or FlexDefaultFactory()

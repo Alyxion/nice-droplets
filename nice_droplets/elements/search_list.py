@@ -1,4 +1,4 @@
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, Tuple
 from nicegui.events import ValueChangeEventArguments, Handler
 
 from nice_droplets.tasks.query_task import QueryTask
@@ -19,7 +19,7 @@ class SearchList(FlexList, SearchResultHandler):
                  on_click: Callable[[Any], None] | None = None,
                  on_content_update: Handler[SearchListContentUpdateEventArguments] | None = None,
                  poll_interval: float = 0.1,
-                 factory: Union[FlexListFactory, str] | None = None
+                 factory: Union[FlexListFactory, Tuple[FlexListFactory, dict], str] | None = None
                  ):
         """Initialize the search list.
         
