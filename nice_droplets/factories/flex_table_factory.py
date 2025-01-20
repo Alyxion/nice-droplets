@@ -62,12 +62,12 @@ class FlexTableFactory(FlexListFactory, short_name="Table"):
         
         if not items:
             return
-            
-        # Convert items to dictionaries
+
         if isinstance(items[0], dict):
-            rows = [item.copy() for item in items]
+            items = [item.copy() for item in items]
         else:
-            rows = [item.to_dict() for item in items]
+            items = [item.to_dict() for item in items]
+        rows = [{key: value for key, value in item.items() if not key.startswith('_')} for item in items]
 
         # Use provided columns or extract from first item
         if self._columns:
@@ -85,7 +85,7 @@ class FlexTableFactory(FlexListFactory, short_name="Table"):
             # Extract columns from the first row
             columns = [
                 {'name': key, 'label': key.title(), 'field': key}
-                for key in rows[0].keys()
+                for key in rows[0].keys() if not key.startswith('_')
             ]
 
         # add invisible key column to every row

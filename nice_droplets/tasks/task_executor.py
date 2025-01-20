@@ -5,6 +5,7 @@ from nicegui import background_tasks, ui, run
 
 from .task import Task
 
+
 class TaskExecutor:
     """Executes tasks with debouncing"""
 
@@ -49,6 +50,10 @@ class TaskExecutor:
                     self._previous_tasks.remove(task)
                     break
         if self._current_task:
+            if self._current_task_started:
+                if self._current_task.is_done:
+                    self._current_task = None
+                return
             self._current_task_started = True
             # Check if execute_async is overridden
             if self._current_task.is_async:

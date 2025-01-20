@@ -4,6 +4,7 @@ from nicegui.element import Element
 from nicegui.elements.mixins.value_element import ValueElement
 from nicegui.events import ValueChangeEventArguments, GenericEventArguments, Handler
 
+from nice_droplets.events import FlexListItemClickedArguments
 from nice_droplets.elements.popover import Popover
 from nice_droplets.components import EventHandlerTracker
 from nice_droplets.tasks.query_task import QueryTask
@@ -30,7 +31,7 @@ class Typeahead(Popover):
                  on_search: Callable[[str], QueryTask] | None = None,
                  min_chars: int = 1,
                  debounce: float = 0.1,
-                 on_click: Callable[[Any], None] | None = None,
+                 on_click: Handler[FlexListItemClickedArguments] | None = None,
                  observe_parent: bool = True,     
                  factory: Union["FlexListFactory", Tuple["FlexListFactory", dict], str] | None = None,
                  on_show: Handler[ShowPopoverEventArguments] | None = None,
@@ -72,7 +73,7 @@ class Typeahead(Popover):
         self._event_helper: EventHandlerTracker | None = None
         self._min_chars = min_chars
         self._selected_value = None
-        self._element_value_selects: dict[Element, Handler[TypeaheadValueSelectEventArguments]] = {}
+        self._element_value_selects: dict[ValueElement, Handler[TypeaheadValueSelectEventArguments]] = {}
         self._element_searches: dict[Element, Callable[[str], QueryTask]] = {}
         
         self._hot_key_handler = HotKeyHandler({
@@ -97,8 +98,13 @@ class Typeahead(Popover):
                 factory=factory
             )
 
+        if on_click:
+            self._search_list.on_click(on_click)
+
         if observe_parent:
             parent = ui.context.slot.parent            
+            if not on_value_select:
+                on_value_select = lambda e: str(e.item)
             self.observe(parent, on_value_select=on_value_select, on_search=on_search)
 
     def observe(self, element: Element, *, 
@@ -114,8 +120,6 @@ class Typeahead(Popover):
         if isinstance(element, ValueElement):
             element.on('keydown', self._handle_key)
             element.on_value_change(self._handle_input_change)
-            if not on_value_select:
-                on_value_select = lambda e: str(e.item)
             self._element_value_selects[element] = on_value_select
             if on_search:
                 self._element_searches[element] = on_search
@@ -153,13 +157,14 @@ class Typeahead(Popover):
             return
         self._remove_current_target()
         self._current_target = self._targets.get(e.args['target'], None)
+        assert self._current_target and isinstance(self._current_target, ValueElement)
         self._event_helper = EventHandlerTracker(self._current_target)
         
         # Set the search handler for the current target
         if self._current_target in self._element_searches:
             self._search_list.set_search_handler(self._element_searches[self._current_target])
         
-        self._search_list.set_search_query(self._current_target.value)
+        self._search_list.set_search_query(str(self._current_target.value))
 
     def _remove_current_target(self) -> None:
         if self._current_target:
@@ -178,7 +183,7 @@ class Typeahead(Popover):
         if self._selected_value == e.value:  # catch once
             self._selected_value = None
             return
-        self._search_list.set_search_query(e.value if e.value else '')
+        self._search_list.set_search_query(str(e.value) if e.value else '')
 
     def _handle_item_select(self, e: Any) -> None:
         """Handle when a suggestion item is selected."""
@@ -190,6 +195,8 @@ class Typeahead(Popover):
         
         # Try element-specific handler first, then fall back to global handler
         for element, handler in self._element_value_selects.items():
+            if not handler:
+                continue
             value = handler(event_args)
             if value is not None:
                 element.set_value(value)

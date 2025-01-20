@@ -37,7 +37,7 @@ class QueryTask(Task):
         :param first_element_index: The index of the first element to return from the search function.
         """
         super().__init__()
-        self.max_elements = max_elements
+        self._max_elements = max_elements
         self._data_lock = RLock()
         self._query: str | None = query
         self._elements: list[Any] = []
@@ -102,6 +102,16 @@ class QueryTask(Task):
             result = await self._search_fn(self._query)  # type: ignore
             self._total_elements = len(result)
             self.set_elements(result)
+
+    @property
+    def query(self) -> str | None:
+        """Get the query string."""
+        return self._query
+
+    @property
+    def max_elements(self) -> int:
+        """Get the maximum number of elements to return."""
+        return self._max_elements
 
     @property
     def elements(self) -> list[Any]:
