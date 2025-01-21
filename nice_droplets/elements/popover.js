@@ -21,10 +21,14 @@ export default {
         hideEvents: Array,
         offsets: String,
         dockingSide: String,
+        fixedPositioning: {
+            type: Boolean,
+            default: false
+        }
     },
     mounted() {
         this.$refs.dockView.style.visibility = 'hidden';
-        this.$refs.dockView.style.position = 'fixed';
+        this.$refs.dockView.style.position = this.fixedPositioning ? 'fixed' : 'absolute';
         this.$refs.dockView.style.pointerEvents = "auto";
         this.$refs.dockView.style.zIndex = 2147483647;
 
@@ -66,9 +70,33 @@ export default {
             let top = targetRect.bottom;
             let left = targetRect.left;
 
+            if (!this.fixedPositioning) {
+                // Get the scroll container
+                const scrollContainer = target.closest('.q-scrollarea');
+                if (scrollContainer) {
+                    // Position popover inside scroll container
+                    if (!this.$refs.dockView.parentElement || this.$refs.dockView.parentElement !== scrollContainer) {
+                        scrollContainer.appendChild(this.$refs.dockView);
+                    }
+
+                    // Get positions relative to scroll container
+                    const containerRect = scrollContainer.getBoundingClientRect();
+                    top = targetRect.bottom - containerRect.top;
+                    left = targetRect.left - containerRect.left;
+                } else {
+                    // No scroll container found, position relative to document
+                    if (!this.$refs.dockView.parentElement || this.$refs.dockView.parentElement !== document.body) {
+                        document.body.appendChild(this.$refs.dockView);
+                    }
+                    // Use absolute positioning relative to document
+                    top = targetRect.bottom + window.scrollY;
+                    left = targetRect.left + window.scrollX;
+                }
+            }
+
             const dockingSide = this.dockingSide;
             // convert offset to string to efficient offsets in pixels, it can be one, two or four values
-            let efficient_offsets = [0, 0, 0, 0];                            
+            let efficient_offsets = [0, 0, 0, 0];
             if (this.offsets) {
                 const offsets = this.offsets.split(' ');
                 if (offsets.length === 1) {
@@ -80,11 +108,24 @@ export default {
                 }
             }
 
+            // Get target dimensions
+            const targetWidth = target.offsetWidth;
+            const targetHeight = target.offsetHeight;
+
             requestAnimationFrame(() => {
                 const viewRect = this.$refs.dockView.getBoundingClientRect();
                 const viewHeight = viewRect.height;
                 const viewWidth = viewRect.width;
-                const targetWidth = targetRect.width;
+
+                // Create a rect-like object with our calculated positions
+                const targetRect = {
+                    top: top - targetHeight,
+                    bottom: top,
+                    left: left,
+                    right: left + targetWidth,
+                    width: targetWidth,
+                    height: targetHeight
+                };
 
                 const components = dockingSide.split(' ');
 
@@ -136,10 +177,10 @@ export default {
                 }
                 if (left < 0) {
                     left = 0;
-                }            
+                }
                 if (top < 0) {
                     top = 0;
-                }            
+                }
                 this.$refs.dockView.style.top = `${top}px`;
                 this.$refs.dockView.style.left = `${left}px`;
             });
