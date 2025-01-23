@@ -19,7 +19,7 @@ class SearchList(FlexList, SearchResultHandler):
                  on_click: Callable[[Any], None] | None = None,
                  on_content_update: Handler[SearchListContentUpdateEventArguments] | None = None,
                  poll_interval: float = 0.1,
-                 factory: Union[FlexListFactory, Tuple[FlexListFactory, dict], str] | None = None
+                 factory: Union[FlexListFactory, Tuple[str, dict], str] | None = None
                  ):
         """Initialize the search list.
         

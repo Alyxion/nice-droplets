@@ -33,7 +33,7 @@ class Typeahead(Popover):
                  debounce: float = 0.1,
                  on_click: Handler[FlexListItemClickedArguments] | None = None,
                  observe_parent: bool = True,     
-                 factory: Union["FlexListFactory", Tuple["FlexListFactory", dict], str] | None = None,
+                 factory: Union["FlexListFactory", Tuple[str, dict], str] | None = None,
                  on_show: Handler[ShowPopoverEventArguments] | None = None,
                  on_hide: Handler[HidePopoverEventArguments] | None = None,
                  on_value_select: Handler[TypeaheadValueSelectEventArguments] | None = None,
@@ -70,6 +70,7 @@ class Typeahead(Popover):
         super().__init__(**popover_kwargs)
         self.keep_hidden = True
         self._current_target: ValueElement | None = None
+        self._last_valid_target: ValueElement | None = None
         self._event_helper: EventHandlerTracker | None = None
         self._min_chars = min_chars
         self._selected_value = None
@@ -155,9 +156,11 @@ class Typeahead(Popover):
         new_target = self._targets.get(e.args['target'], None)
         if self._current_target == new_target:
             return
+            
         self._remove_current_target()
-        self._current_target = self._targets.get(e.args['target'], None)
+        self._current_target = new_target
         assert self._current_target and isinstance(self._current_target, ValueElement)
+        self._last_valid_target = self._current_target
         self._event_helper = EventHandlerTracker(self._current_target)
         
         # Set the search handler for the current target
@@ -166,15 +169,17 @@ class Typeahead(Popover):
         
         self._search_list.set_search_query(str(self._current_target.value))
 
-    def _remove_current_target(self) -> None:
-        if self._current_target:
-            self._current_target = None
-            self._event_helper.remove()
-            self._event_helper = None
-
     def _handle_hide(self, e: GenericEventArguments) -> None:
         self._remove_current_target()
         return super()._handle_hide(e)
+
+    def _remove_current_target(self) -> None:
+        self._search_list.items = []
+        if self._current_target:
+            self._current_target = None
+            if self._event_helper:
+                self._event_helper.remove()
+                self._event_helper = None
 
     def _handle_input_change(self, e: ValueChangeEventArguments) -> None:
         """Handle input value changes."""
