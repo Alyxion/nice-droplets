@@ -1,29 +1,39 @@
-from typing import Any, Callable
+from typing import Any, Callable, Union, Tuple
 from nicegui.events import ValueChangeEventArguments, Handler
 
-from nice_droplets.components import SearchTask
+from nice_droplets.tasks.query_task import QueryTask
 from nice_droplets.components.search_manager import SearchManager, SearchResultHandler
 from nice_droplets.events import SearchListContentUpdateEventArguments
 from nice_droplets.factories import FlexListFactory
-from nice_droplets.elements.flex_list import FlexList
+from nice_droplets.elements.flex_list import FlexList as flex_list
 
 
-
-class SearchList(FlexList, SearchResultHandler):
+class SearchList(flex_list, SearchResultHandler):
     """List component showing search results with keyboard navigation"""
 
     def __init__(self,
                  *,
-                 on_search: Callable[[str], SearchTask] | None = None,
+                 on_search: Callable[[str], QueryTask] | None = None,
                  min_chars: int = 1,
                  debounce: float = 0.3,
-                 on_select: Callable[[Any], None] | None = None,
+                 on_click: Callable[[Any], None] | None = None,
                  on_content_update: Handler[SearchListContentUpdateEventArguments] | None = None,
                  poll_interval: float = 0.1,
-                 factory: FlexListFactory | None = None
+                 factory: Union[FlexListFactory, Tuple[str, dict], str] | None = None
                  ):
+        """Initialize the search list.
+        
+        :param on_search: Function that creates a search task for a query.
+        :param min_chars: Minimum number of characters required to start a search.
+        :param debounce: Time to wait before executing a search after input changes.
+        :param on_click: Function to call when an item is clicked.
+        :param on_content_update: Handler for content update events.
+        :param poll_interval: Interval for polling search results.
+        :param factory: Factory to use for creating the flex views. Can be either a FlexListFactory instance
+                      or a string name (e.g., "Item", "Table", "Default", or their capital letter versions like "I", "T", "D")
+        """
         super().__init__(
-            on_select=on_select,
+            on_click=on_click,
             on_content_update=on_content_update,
             factory=factory
         )
@@ -36,6 +46,11 @@ class SearchList(FlexList, SearchResultHandler):
             debounce=debounce,
             poll_interval=poll_interval
         )
+
+    def set_search_handler(self, on_search: Callable[[str], QueryTask] | None) -> None:
+        """Set the search handler for the search list."""
+        self._on_search = on_search
+        self._search_manager.set_search_handler(on_search)
 
     def set_search_query(self, query: str) -> None:
         """Handle input changes"""

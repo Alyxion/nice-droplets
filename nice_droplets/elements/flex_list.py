@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union, Tuple
 from dataclasses import dataclass
 
 from nicegui import ui
@@ -13,24 +13,35 @@ from nice_droplets.events import SearchListContentUpdateEventArguments, FlexList
 class FlexList(ui.element):    
     def __init__(self, *, 
                  items: Optional[list[Any]] = None,
-                 factory: Optional[FlexListFactory] = None,
+                 factory: Optional[Union[FlexListFactory, Tuple[FlexListFactory, dict], str]] = None,
                  on_content_update: Handler[SearchListContentUpdateEventArguments] | None = None,
-                 on_select: Handler[FlexListItemClickedArguments] | None = None,
+                 on_click: Handler[FlexListItemClickedArguments] | None = None,
                  ):
         """FlexList
 
         The FlexList component displays a list of items using a flexible item factory.
 
         :param items: List of items to display.
-        :param factory: Factory to use for creating the flex views.
+        :param factory: Factory to use for creating the flex views. Can be either a FlexListFactory instance
+                      or a string name (e.g., "Item", "Table", "Default", or their capital letter versions
+                      like "I", "T", "D")
+
+                      Parameters can be passed to the factory as a tuple.
         :param on_content_update: Handler for content update events.
-        :param on_select: Handler for select events.
+        :param on_click: Handler for click events.
         """
         super().__init__()
         self._content_update_handlers = [on_content_update] if on_content_update else []
-        self._select_handlers = [on_select] if on_select else []
+        self._click_handlers = [on_click] if on_click else []
         self._items: list[Any] = items or []
-        self._view_factory = factory or FlexDefaultFactory()
+
+        if isinstance(factory, tuple):
+            self._view_factory = FlexListFactory.create_by_name(factory[0], **factory[1])
+        elif isinstance(factory, str):
+            self._view_factory = FlexListFactory.create_by_name(factory)
+        else:
+            self._view_factory = factory or FlexDefaultFactory()
+            
         self._view_factory.on_click(self._handle_item_click)
         self._container = self._view_factory.create_container()
         self._props['container_id'] = self._container.id
@@ -65,9 +76,9 @@ class FlexList(ui.element):
         """Add content update handler"""
         self._content_update_handlers.append(handler)
 
-    def on_select(self, handler: Handler[FlexListItemClickedArguments]) -> None:
-        """Add select handler"""
-        self._select_handlers.append(handler)
+    def on_click(self, handler: Handler[FlexListItemClickedArguments]) -> None:
+        """Add click handler"""
+        self._click_handlers.append(handler)
 
     def _handle_key(self, e: GenericEventArguments) -> bool:
         """Handle keyboard navigation events.
@@ -111,13 +122,18 @@ class FlexList(ui.element):
 
     def _confirm_current(self) -> None:
         """Select the currently highlighted item."""
-        if 0 <= self._view_factory.index < len(self._items):
-            element = self._view_factory._item_elements[self._view_factory.index] if self._view_factory._item_elements else None
-            self._handle_item_click(FlexFactoryItemClickedArguments(sender=self, item=self._items[self._view_factory.index], index=self._view_factory.index, element=element))
+        sel_index = self._view_factory.index
+        if sel_index == -1 and len(self._items) > 0:
+            self._update_selection(0)
+            sel_index = 0
+            
+        if 0 <= sel_index < len(self._items):
+            element = self._view_factory._item_elements[sel_index] if self._view_factory._item_elements else None
+            self._handle_item_click(FlexFactoryItemClickedArguments(sender=self, item=self._items[sel_index], index=sel_index, element=element))
 
     def _handle_item_click(self, e: FlexFactoryItemClickedArguments) -> None:
         """Handle item click events."""
-        for handler in self._select_handlers:
+        for handler in self._click_handlers:
             handle_event(handler, FlexListItemClickedArguments(sender=self, client=self.client, item=e.item, index=e.index, element=e.element))
 
     def update_items(self, items: list[Any]) -> None:

@@ -1,25 +1,38 @@
-from typing import Any
+import inspect
+from typing import Any, Callable
 
 from nicegui import ui
 
-from nice_droplets.elements.item import Item
-from nice_droplets.elements.list import List
-from nice_droplets.elements.item_section import ItemSection
+from nice_droplets.events import FlexFactoryItemClickedArguments
+from nice_droplets.elements.item import Item as item
+from nice_droplets.elements.list import List as list
+from nice_droplets.elements.item_section import ItemSection as item_section
 from .flex_list_factory import FlexListFactory
 
-class FlexItemListFactory(FlexListFactory):
-    """Factory for creating item lists with advanced features like title, subtitle and avatar."""
+class FlexItemListFactory(FlexListFactory, short_name="Item"):
+    
+    def __init__(self, on_item_click: Callable[[FlexFactoryItemClickedArguments], None] | None = None, **kwargs):
+        """FlexItemListFactory
 
-    def __init__(self, **kwargs: dict[str, Any]):
-        super().__init__()
+        Factory for creating item lists with advanced features like title, subtitle and avatar.
+
+        :param on_item_click: Optional callback for handling item clicks        
+        :param kwargs: Additional keyword arguments:
+            - bordered (bool): applies a border to the list
+            - separator (bool): applies a separator between items
+            - padding (bool): applies default padding to the list
+            - ... and other arguments supported by list
+        """
+        super().__init__(on_item_click=on_item_click)
+        # Extract list-specific kwargs
         self._list_kwargs = kwargs
 
     def create_container(self) -> ui.element:
         """Create and return the container element"""
-        self._container = List(**self._list_kwargs)
+        self._container = list(**self._list_kwargs)
         return self._container
 
-    def setup_item(self, item: Item, data: Any) -> ui.element:
+    def setup_item(self, item: item, data: Any) -> ui.element:
         # Extract basic properties
         title = None
         subtitle = None
@@ -39,14 +52,14 @@ class FlexItemListFactory(FlexListFactory):
         with item:
             # Add avatar if provided
             if avatar:
-                with ItemSection(avatar=True):
+                with item_section(avatar=True):
                     if avatar.startswith(('http://', 'https://')):
                         ui.image(avatar).classes(f'w-8 h-8{"rounded-full" if avatar_round else ""}')
                     else:
                         ui.icon(avatar).classes('text-2xl')
 
             # Add text content
-            with ItemSection():
+            with item_section():
                 if title:
                     ui.label(title).classes('text-body1')
                 if subtitle:
@@ -56,17 +69,17 @@ class FlexItemListFactory(FlexListFactory):
 
     def create_item(self, data: Any) -> ui.element:
         # Create the item
-        item = Item(
+        item_obj = item(
             clickable=not self.is_item_disabled(data),
             disable=self.is_item_disabled(data),
         )
 
         """Create and return an item element for the given data"""
-        self.setup_item(item, data)
+        self.setup_item(item_obj, data)
         # Add click handler
-        item.on('click', lambda _: self.handle_item_click(item))
+        item_obj.on('click', lambda _: self.handle_item_click(item_obj))
                     
-        return item
+        return item_obj
 
     def select_item(self, index: int) -> None:
         """Apply selection styling to an item at the given index"""

@@ -4,22 +4,24 @@ from nicegui import ui
 
 from .flex_list_factory import FlexListFactory
 
-class FlexTableFactory(FlexListFactory):
+class FlexTableFactory(FlexListFactory, short_name="Table"):
     """Factory for creating table-based lists with structured data."""
     
-    def __init__(self, *, 
-    value_column: Optional[str] = None,
-    to_string: Optional[Callable[[Any], str]] = None):
+    def __init__(self, *, columns: list[str | dict] | None = None,
+                 row_key: str = 'id',
+                 **kwargs):
         """Initialize the table factory.
-        
-        :param value_column: If provided, use this column to convert items to strings
-        :param to_string: Optional callback function that converts a selected item to a string.
-                       If not provided, str() will be used on the item.        
+
+        :param columns: Optional list of column definitions. Each element can be either:
+                     - A string (field name, auto-converts to title case for label)
+                     - A dictionary with 'name', 'label', 'field' keys
+        :param row_key: Name of the column containing unique data identifying the row
         """
-        super().__init__(to_string=to_string)
-        if value_column and not to_string:
-            self._to_string = lambda item: str(self.item_to_dict(item)[value_column])
+        super().__init__(**kwargs)
         self._table = None
+        self._columns = columns
+        self._row_key = row_key
+        self._rows = []
         
     def create_container(self) -> ui.element:
         self._container = ui.element('div').classes('flex flex-col gap-1 min-w-[200px]')
@@ -60,32 +62,43 @@ class FlexTableFactory(FlexListFactory):
         
         if not items:
             return
-            
-        # Extract columns from the first item
-        sample_item = items[0]
-        if isinstance(sample_item, dict):
-            columns = [
-                {'name': key, 'label': key.title(), 'field': key}
-                for key in sample_item.keys()
-            ]
-            rows = [item.copy() for item in items]
+
+        if isinstance(items[0], dict):
+            items = [item.copy() for item in items]
         else:
-            # For dataclass objects, convert to dict
-            data_dict = sample_item.to_dict()
+            items = [item.to_dict() for item in items]
+        rows = [{key: value for key, value in item.items() if not key.startswith('_')} for item in items]
+
+        # Use provided columns or extract from first item
+        if self._columns:
+            columns = []
+            for col in self._columns:
+                if isinstance(col, str):
+                    columns.append({
+                        'name': col,
+                        'label': col.title(),
+                        'field': col
+                    })
+                else:
+                    columns.append(col)
+        else:
+            # Extract columns from the first row
             columns = [
                 {'name': key, 'label': key.title(), 'field': key}
-                for key in data_dict.keys()
+                for key in rows[0].keys() if not key.startswith('_')
             ]
-            rows = [item.to_dict() for item in items]
 
         # add invisible key column to every row
         for index, row in enumerate(rows):
             row['_index'] = index
+
+        self.rows = rows
             
         # Create table with rows and columns
         with self._container:
             self._table = ui.table(
                 columns=columns,
+                row_key=self._row_key,
                 rows=rows,                
             )
             

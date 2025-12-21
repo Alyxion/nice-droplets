@@ -3,8 +3,8 @@
 from typing import Any, Callable, Protocol
 from nicegui import ui
 
-from .task_executor import TaskExecutor
-from .search_task import SearchTask
+from nice_droplets.tasks.task_executor import TaskExecutor
+from nice_droplets.tasks import QueryTask
 
 
 class SearchResultHandler(Protocol):
@@ -32,7 +32,7 @@ class SearchManager:
     
     def __init__(
         self,
-        on_search: Callable[[str], SearchTask] | None = None,
+        on_search: Callable[[str], QueryTask] | None = None,
         result_handler: SearchResultHandler | None = None,
         min_chars: int = 1,
         debounce: float = 0.1,
@@ -52,6 +52,10 @@ class SearchManager:
         self._task_executor = TaskExecutor(debounce)
         self._poll_timer: ui.timer | None = None
         self._poll_interval = poll_interval
+
+    def set_search_handler(self, on_search: Callable[[str], QueryTask] | None) -> None:
+        """Set the search handler for the search manager."""
+        self._on_search = on_search
 
     def handle_search(self, query: str) -> None:
         """Handle a new search query.
@@ -81,7 +85,7 @@ class SearchManager:
             active=True
         )
 
-    def _check_results(self, task: SearchTask) -> None:
+    def _check_results(self, task: QueryTask) -> None:
         """Check if results are available and notify handler.
         
         :param task: The search task to check.

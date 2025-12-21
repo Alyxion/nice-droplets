@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar, Type
 
 from nicegui import ui
 from nicegui.events import handle_event
@@ -7,15 +7,53 @@ from nice_droplets.events import FlexFactoryItemClickedArguments
 
 T = TypeVar('T')
 
-class FlexListFactory:
+class FlexFactoryMeta(type):
+    def __new__(mcs, name, bases, attrs, **kwargs):
+        # Store short_name as class attribute
+        attrs['_short_name'] = kwargs.get('short_name', name)
+        return super().__new__(mcs, name, bases, attrs)
+
+    def __init__(cls, name, bases, attrs, **kwargs):
+        super().__init__(name, bases, attrs)
+
+class FlexListFactory(metaclass=FlexFactoryMeta, short_name="List"):
+    @classmethod
+    def create_by_name(cls, name: str, **kwargs) -> 'FlexListFactory':
+        """Create a factory instance by its short name.
+        
+        :param name: The short name of the factory (case-insensitive)
+        :param kwargs: Additional keyword arguments to pass to the factory constructor
+        :return: An instance of the matching factory
+        :raises ValueError: If no factory matches the given name
+        """
+        # Import all factory modules to ensure they are loaded
+        import nice_droplets.factories
+        
+        # Get all subclasses including the base class
+        all_factories: list[Type[FlexListFactory]] = [cls] + [
+            subcls for subcls in cls.__subclasses__()
+        ]
+        
+        # Try to find a match (case-insensitive)
+        name_lower = name.lower()
+        for factory_cls in all_factories:
+            short_name = factory_cls._short_name
+            # Try exact match (case-insensitive)
+            if short_name.lower() == name_lower:
+                return factory_cls(**kwargs)
+            # Try capital letters match (e.g. "IL" for "ItemList")
+            capitals = ''.join(c for c in short_name if c.isupper())
+            if capitals and capitals.lower() == name_lower:
+                return factory_cls(**kwargs)
+                
+        raise ValueError(f"No factory found with name '{name}'. Available factories: " + 
+                       ", ".join(f._short_name for f in all_factories))
+
     def __init__(self, *, 
-                 on_item_click: Optional[Callable[[FlexFactoryItemClickedArguments], None]] = None,
-                 to_string: Optional[Callable[[Any], str]] = None):
+                 on_item_click: Optional[Callable[[FlexFactoryItemClickedArguments], None]] = None):
         """Initialize the list factory.
         
         :param on_item_click: Optional callback for handling item clicks
-        :param to_string: Optional callback function that converts a selected item to a string.
-                       If not provided, str() will be used on the item.
         """
         self._index = -1
         self._previous_index = -1
@@ -23,7 +61,6 @@ class FlexListFactory:
         self._items: list[Any] = []
         self._item_elements: list[ui.element] = []
         self._click_handler: list[Callable[[FlexFactoryItemClickedArguments], None]] = [on_item_click] if on_item_click else []
-        self._to_string = to_string or str
         
     def create_container(self) -> ui.element:
         """Create and return the container element"""
@@ -94,10 +131,6 @@ class FlexListFactory:
         self._item_elements = []
         self._index = -1
         self._previous_index = -1
-
-    def get_item_string(self, item: Any) -> str:
-        """Convert an item to its string representation using the to_string callback."""
-        return self._to_string(item)
 
     def handle_item_click(self, element: int | ui.element) -> None:
         if isinstance(element, ui.element):
